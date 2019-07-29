@@ -1,0 +1,22 @@
+# Python
+*.py[cod]
+.cache
+.pytest_cache
+
+# build & test
+build/
+dist/
+.eggs/
+*.egg-info
+.tox
+.coverage
+
+# IDEs
+*.swp
+*~
+.idea
+*.bat
+
+# DB
+*.db
+*.db-journal
