@@ -1,7 +1,6 @@
 from os import path
 
-PACKAGE_DIR = path.dirname(__file__)
-PROJECT_DIR = path.dirname(PACKAGE_DIR)
+PROJECT_DIR = path.dirname(path.dirname(__file__))
 
 
 def get_dir(*path_elements: str) -> str:
