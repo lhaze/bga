@@ -20,3 +20,6 @@ dist/
 # DB
 *.db
 *.db-journal
+
+# data folders
+data/
