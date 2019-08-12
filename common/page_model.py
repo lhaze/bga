@@ -4,7 +4,7 @@ from scrapy.selector import Selector
 
 
 Value = t.Union[str, int]
-Processor = t.Callable[['Model', Value], Value]
+Processor = t.Callable[['PageFragment', Value], Value]
 
 
 class Field:
@@ -20,7 +20,7 @@ class Field:
     def __set_name__(self, owner, name):
         self.name = name
 
-    def __get__(self, instance, owner: 'Model'):
+    def __get__(self, instance, owner: 'PageFragment'):
         if instance is None:
             return self
         value = instance.__selector__.xpath(self.xpath) if self.xpath else None
@@ -34,7 +34,7 @@ class Field:
         self.processor = method
 
 
-class Model:
+class PageFragment:
 
     __fields__: t.Dict[str, t.Optional[Field]] = None
 

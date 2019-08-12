@@ -1,15 +1,15 @@
 from decimal import Decimal
 
+from pca.utils.functools import reify
 from python_path import PythonPath
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 
 with PythonPath("..", "..", relative_to=__file__):
     from common import get_data_dir
-    from common.functools import reify
     from common.page_model import (
         Field,
-        Model,
+        PageFragment,
     )
     from common.texttools import text_to_money
     from common.urls import get_url
@@ -19,7 +19,7 @@ with PythonPath("..", "..", relative_to=__file__):
     )
 
 
-class PlanszomaniaItem(Model):
+class PlanszomaniaItem(PageFragment):
     domain: str = None
 
     title = Field(processor=lambda model, value: model.title_link.attrib.get('title'))
@@ -60,7 +60,7 @@ class PlanszomaniaItem(Model):
         return get_url(self.domain, self.title_link.xpath('./img').attrib.get('src'))
 
 
-class PlanszomaniaList(Model):
+class PlanszomaniaList(PageFragment):
     domain: str = None
 
     def items(self) -> PlanszomaniaItem:
@@ -76,7 +76,7 @@ class PlanszomaniaSpider(CrawlSpider):
         'https://www.planszomania.pl/strategiczne/',
     ]
     custom_settings = {
-        'FEED_URI': get_data_dir(f'{name}.csv'),
+        'FEED_URI': get_data_dir(f'{name}.json_lines'),
         'FEED_FORMAT': 'jsonlines',
     }
 
