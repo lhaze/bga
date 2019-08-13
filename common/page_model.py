@@ -51,3 +51,6 @@ class PageFragment:
 
     def field(self, method: t.Callable):
         self.__fields__[method.__name__] = None
+
+    def items(self):
+        raise NotImplementedError
