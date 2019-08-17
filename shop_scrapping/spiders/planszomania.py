@@ -63,7 +63,7 @@ class PlanszomaniaItem(PageFragment):
 class PlanszomaniaList(PageFragment):
     domain: str = None
 
-    def items(self) -> PlanszomaniaItem:
+    def items(self) -> dict:
         for selector in self.__selector__.xpath(f"//table{by_id('tab_itemlist')}/tr"):
             yield PlanszomaniaItem(selector, domain=self.domain).as_dict()
 

@@ -52,5 +52,10 @@ class PageFragment:
     def field(self, method: t.Callable):
         self.__fields__[method.__name__] = None
 
-    def items(self):
+    def items(self) -> t.Generator[dict, None, None]:
         raise NotImplementedError
+
+
+class TestPageFragment(PageFragment):
+    def items(self) -> t.Generator[dict, None, None]:
+        yield from [{'value': i} for i in range(5)]
