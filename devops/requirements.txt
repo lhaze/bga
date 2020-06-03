@@ -13,9 +13,19 @@ ruamel.yaml==0.16.10
 # devops tools
 pip==20.1.1
 setuptools==47.1.1
+wheel~=0.34.2
 
 # dev tools
 ipython==7.15.0
 pdbpp==0.10.2
 gnureadline==8.0.0
+pytest~=5.4.3
 pytest-flake8==1.0.6
+
+# implicit
+lxml~=4.5.1
+py~=1.8.1
+six~=1.15.0
+pluggy~=0.13.1
+attrs~=19.3.0
+atomicwrites~=1.4.0

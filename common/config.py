@@ -10,11 +10,11 @@ from dataclasses import (
 )
 import typing as t
 
-from pca.utils.functools import reify
+from pca.data.descriptors import reify
 from pca.utils.imports import import_dotted_path
 from scrapy.spiders import Rule
 
-from .page_model import PageFragment
+from shop_scrapping.page import PageFragment
 
 
 @dataclass
