@@ -1,92 +1,56 @@
-from decimal import Decimal
-
-from pca.utils.functools import reify
+from pca.data.descriptors import reify
 from python_path import PythonPath
-from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
-from scrapy.spiders import CrawlSpider, Rule
 
 with PythonPath("..", "..", relative_to=__file__):
-    from common import get_data_dir
-    from common.page_model import (
-        Field,
+    from common.page import (
+        Css,
         PageFragment,
     )
-    from common.texttools import text_to_money
-    from common.urls import get_url
-    from common.xpaths import (
-        by_class,
-        by_id,
+    from common.texttools import (
+        find_strip,
+        text_to_money,
+        to_money,
     )
+    from common.urls import clean_url
 
 
 class PlanszomaniaItem(PageFragment):
-    domain: str = None
+    domain: str
 
-    title = Field(processor=lambda model, value: model.title_link.attrib.get('title'))
-    current_price = Field(f"./td{by_class('td_itemlist_cena_even')}/text()")
-    regular_price = Field(f"./td{by_class('td_itemlist_cena_even')}/span{by_class('stara_cena')}/text()")
-    availability = Field(f"./td{by_class('td_itemlist_cena_even')}/span{by_class('span_small')}/text()")
-    details_url = Field()
-    thumbnail_url = Field()
+    title = Css('td.td_itemlist_gamebox a::attr(title)')
+    current_price = Css('td.td_itemlist_cena_even::text')
+    regular_price = Css('td.td_itemlist_cena_even span.stara_cena::text')
+    availability = Css('td.td_itemlist_cena_even span.span_small::text')
+    details_url = Css('td.td_itemlist_gamebox a::attr(href)', clean=clean_url)
+    thumbnail_url = Css('td.td_itemlist_gamebox a img::attr(src)', clean=clean_url)
 
     @reify
     def title_link(self):
-        return self.__selector__.xpath(f"./td{by_class('td_itemlist_gamebox')}/a")
+        return self._selector.css('td.td_itemlist_gamebox a')
 
-    @current_price.register_processor
-    def _(self, value):
-        value_found = next((f for f in (fragment.strip() for fragment in value.extract()) if f), None)
-        return text_to_money(value_found)
+    @current_price.clean
+    def _(self, selector_list):
+        return text_to_money(find_strip(selector_list.getall()))
 
-    @regular_price.register_processor
-    def _(self, value):
-        value_found = value.get()
+    @reify
+    def currency(self):
+        return self.current_price['currency']
+
+    @regular_price.clean
+    def _(self, selector_list):
+        value_found = selector_list.get()
         value_found = value_found.strip() if value_found is not None else None
         if not value_found:
             return
-        return Decimal(value_found.replace(',', '.'))
+        return to_money(value_found, self.currency)
 
-    @availability.register_processor
-    def _(self, value):
-        value_found = next((f for f in (fragment.strip() for fragment in value.extract()) if f), None)
+    @availability.clean
+    def _(self, selector_list):
+        value_found = find_strip(selector_list.getall())
         return value_found.strip('()')
-
-    @details_url.register_processor
-    def _(self, value):
-        return get_url(self.domain, self.title_link.attrib.get('href'))
-
-    @thumbnail_url.register_processor
-    def _(self, value):
-        return get_url(self.domain, self.title_link.xpath('./img').attrib.get('src'))
 
 
 class PlanszomaniaList(PageFragment):
-    domain: str = None
+    domain: str
 
-    def items(self) -> dict:
-        for selector in self.__selector__.xpath(f"//table{by_id('tab_itemlist')}/tr"):
-            yield PlanszomaniaItem(selector, domain=self.domain).as_dict()
-
-
-class PlanszomaniaSpider(CrawlSpider):
-    name = 'planszomania'
-    domain = 'www.planszomania.pl'
-    allowed_domains = [domain]
-    start_urls = [
-        'https://www.planszomania.pl/strategiczne/',
-    ]
-    custom_settings = {
-        'FEED_URI': get_data_dir(f'{name}.json_lines'),
-        'FEED_FORMAT': 'jsonlines',
-    }
-
-    rules = (
-        Rule(
-            LxmlLinkExtractor(restrict_css='.box_gray_cen'),
-            callback="parse_list",
-            follow=True
-        ),
-    )
-
-    def parse_list(self, response):
-        yield from PlanszomaniaList(response, domain=self.domain).items()
+    items = Css('#tab_itemlist tr', many=True, model=PlanszomaniaItem)
