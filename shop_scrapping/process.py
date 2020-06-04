@@ -34,14 +34,17 @@ def load_config_dict(config_file: t.IO) -> dict:
 
 def get_configs(config_content: dict) -> t.List[SpiderConfig]:
     process_config = ProcessConfig(config_content.get('process_config', {}))
-    return [SpiderConfig(process_config=process_config, name=name, **d) for name, d in config_content.get('spider_configs', {}).items()]
+    return [
+        SpiderConfig(process_config=process_config, name=name, **d)
+        for name, d in config_content.get('spider_configs', {}).items()
+    ]
 
 
 def construct_scrappers(config: str):
     return []
 
 
-def process_scrappers(spider_classes: t.Iterable):
+def process_scrappers(spider, process):
     process_crawler_start.send(process)
     spider.start()  # the script will block here until all crawling jobs are finished
     process_crawler_end.send(process)

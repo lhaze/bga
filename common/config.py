@@ -12,7 +12,6 @@ import typing as t
 
 from pca.data.descriptors import reify
 from pca.utils.imports import import_dotted_path
-from scrapy.spiders import Rule
 
 from shop_scrapping.page import PageFragment
 
@@ -56,16 +55,15 @@ class SpiderConfig:
     ...     allowed_domains=['allowed'],
     ...     start_urls=['start_urls'],
     ...     expected_start='12:51:00',
-    ...     rules=[],
-    ...     item_details_class='common.page_model.TestPageFragment',
-    ...     item_list_class='common.page_model.TestPageFragment',
+    ...     item_details_class='common.config.ExamplePageFragment',
+    ...     item_list_class='common.config.ExamplePageFragment',
     ...     is_active=True
-    ... )   # doctest:+ELLIPSIS
-    SpiderConfig(process_config=ProcessConfig(start=datetime.datetime(2019, 8, 14, 12, 50, 32), \
-interval=datetime.timedelta(seconds=3600)), name='name', domain='domain', allowed_domains=['allowed'], \
-start_urls=['start_urls'], expected_start=datetime.time(12, 51), rules=[], \
-item_list_class=<class 'common.page_model.TestPageFragment'>, \
-item_details_class=<class 'common.page_model.TestPageFragment'>, is_active=True)
+    ... )   # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    SpiderConfig(process_config=ProcessConfig(start=datetime.datetime(2019, 8, 14, 12, 50, 32),
+    interval=datetime.timedelta(seconds=3600)), name='name', domain='domain', allowed_domains=['allowed'],
+    start_urls=['start_urls'], expected_start=datetime.time(12, 51),
+    item_list_class=<class 'common.config.ExamplePageFragment'>,
+    item_details_class=<class 'common.config.ExamplePageFragment'>, is_active=True)
     """
 
     process_config: ProcessConfig
@@ -74,7 +72,6 @@ item_details_class=<class 'common.page_model.TestPageFragment'>, is_active=True)
     allowed_domains: t.List[str]
     start_urls: t.List[str]
     expected_start: t.Union[str, time]
-    rules: t.Union[str, t.List[Rule]]
     item_list_class: t.Union[str, t.Type[PageFragment]]
     item_details_class: t.Union[str, t.Type[PageFragment], None] = None
     is_active: bool = True
@@ -82,8 +79,6 @@ item_details_class=<class 'common.page_model.TestPageFragment'>, is_active=True)
     def __post_init__(self):
         if isinstance(self.expected_start, str):
             self.expected_start = time.fromisoformat(self.expected_start)
-        if isinstance(self.rules, str):
-            self.rules = t.cast(t.List[Rule], import_dotted_path(self.rules))
         if isinstance(self.item_list_class, str):
             self.item_list_class = t.cast(t.Type[PageFragment], import_dotted_path(self.item_list_class))
         if self.item_details_class and isinstance(self.item_details_class, str):
@@ -96,9 +91,8 @@ item_details_class=<class 'common.page_model.TestPageFragment'>, is_active=True)
         ...     domain='domain',
         ...     allowed_domains=['allowed'],
         ...     start_urls=['start_urls'],
-        ...     rules=[],
-        ...     item_details_class='common.page_model.TestPageFragment',
-        ...     item_list_class='common.page_model.TestPageFragment',
+        ...     item_details_class='common.config.ExamplePageFragment',
+        ...     item_list_class='common.config.ExamplePageFragment',
         ... )
         >>> p = ProcessConfig(datetime(2019, 8, 14, 12, 50, 32))
         >>> # inside the time slot
@@ -121,3 +115,8 @@ item_details_class=<class 'common.page_model.TestPageFragment'>, is_active=True)
         expected_start: datetime = datetime.combine(self.process_config.start_date, self.expected_start)
         expected_end: datetime = expected_start + self.process_config.interval
         return self.is_active and expected_start <= self.process_config.start <= expected_end
+
+
+class ExamplePageFragment(PageFragment):
+    def items(self) -> t.Generator[dict, None, None]:
+        yield from [{'value': i} for i in range(5)]

@@ -21,6 +21,7 @@ dist/
 *.db
 *.db-journal
 
-# data folders
+# workbench folders
 data/
 workbench.py
+scratch.py
