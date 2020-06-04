@@ -1,0 +1,3 @@
+
+class BgaException(Exception):
+    pass

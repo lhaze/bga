@@ -1,10 +1,19 @@
 import typing as t
+from inspect import isawaitable
 
 from parsel import Selector, SelectorList
 
+from common.exceptions import BgaException
 
-Value = t.Union[str, 'PageFragment', t.List['PageFragment']]
-CleanFunction = t.Callable[['PageFragment', SelectorList], Value]
+
+Value = t.Union[str, dict, t.List[dict]]
+Model = t.Union['PageFragment', t.List['PageFragment']]
+ValueOrModel = t.Union[Value, Model]
+CleanFunction = t.Callable[['PageFragment', SelectorList], ValueOrModel]
+
+
+class IgnoreThisItem(BgaException):
+    pass
 
 
 class Field:
@@ -28,9 +37,11 @@ class Field:
         if clean:
             self._clean = clean
         elif model and many:
-            self._clean = lambda page_fragment, selector_list: [model(selector=v, **page_fragment._kwargs) for v in selector_list]
+            self._clean = lambda page_fragment, selector_list: \
+                [model(selector=v, **page_fragment._kwargs) for v in selector_list]
         elif model:
-            self._clean = lambda page_fragment, selector_list: model(selector=selector_list[0], **page_fragment._kwargs)
+            self._clean = lambda page_fragment, selector_list: \
+                model(selector=selector_list[0], **page_fragment._kwargs)
         elif many:
             self._clean = lambda page_fragment, selector_list: selector_list.getall()
         else:
@@ -39,23 +50,44 @@ class Field:
     def __set_name__(self, owner, name):
         self.name = name
 
-    def __get__(self, page_fragment: t.Optional['PageFragment'], owner: t.Optional[t.Type['PageFragment']]):
+    def __get__(
+            self,
+            page_fragment: t.Optional['PageFragment'],
+            owner: t.Optional[t.Type['PageFragment']]
+    ) -> t.Union['Field', ValueOrModel]:
         if page_fragment is None:
             return self
         value = self._get_value(page_fragment)
         page_fragment.__dict__[self.name] = value
         return value
 
-    def to_value(self, page_fragment: 'PageFragment'):
+    def to_value(self, page_fragment: 'PageFragment') -> Value:
         if self.many and self.model:
             return [m.to_dict() for m in self._get_value(page_fragment)]
         if self.model:
             return self._get_value(page_fragment).to_dict()
         return self._get_value(page_fragment)
 
-    def _get_value(self, page_fragment: 'PageFragment') -> Value:
+    async def async_to_value(self, page_fragment: 'PageFragment'):
+        if self.many and self.model:
+            return [await m.async_to_dict() for m in await self._async_get_value(page_fragment)]
+        if self.model:
+            instance = await self._async_get_value(page_fragment)
+            return await instance.async_to_dict()
+        return await self._async_get_value(page_fragment)
+
+    def _get_value(self, page_fragment: 'PageFragment') -> ValueOrModel:
+        # TODO research for async interface for Selector
         selector = self._get_selector(page_fragment)
         return self._clean(page_fragment, selector)
+
+    async def _async_get_value(self, page_fragment: 'PageFragment') -> ValueOrModel:
+        selector = self._get_selector(page_fragment)
+        if isawaitable(self._clean):
+            value = await self._clean(page_fragment, selector)
+        else:
+            value = self._clean(page_fragment, selector)
+        return value
 
     def _get_selector(self, page_fragment: 'PageFragment') -> SelectorList:
         raise NotImplementedError
@@ -140,6 +172,7 @@ class PageFragment:
     'links': ['<img src="image1_thumb.jpg">', '<img src="image2_thumb.jpg">', '<img src="image3_thumb.jpg">']}
     """
     _fields: t.Dict[str, t.Optional[Field]] = {}
+    to_be_ignored: bool = False
 
     def __init__(
             self,
@@ -148,7 +181,7 @@ class PageFragment:
             fields: t.Mapping[str, Field] = None,
             **kwargs
     ):
-        self.to_be_ignored = False
+        self.html = text
         self._selector = selector or Selector(text=text)
         self._kwargs = kwargs
         if fields:
@@ -159,8 +192,20 @@ class PageFragment:
         super().__init_subclass__()
         cls._fields = {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
 
+    def get_field(self, name):
+        return self._fields[name]
+
     def to_dict(self) -> dict:
-        return {k: f.to_value(self) for k, f in self._fields.items()}
+        try:
+            return {k: f.to_value(self) for k, f in self._fields.items()}
+        except IgnoreThisItem:
+            self.to_be_ignored = True
+
+    async def async_to_dict(self) -> dict:
+        try:
+            return {k: await f.async_to_value(self) for k, f in self._fields.items()}
+        except IgnoreThisItem:
+            self.to_be_ignored = True
 
     def __repr__(self):
         data = repr(self._selector.get()[:40])
