@@ -1,5 +1,4 @@
 import typing as t
-from collections.abc import Sequence
 
 from ruia import Request
 
@@ -16,9 +15,14 @@ async def get_html(url: str, **kwargs) -> str:
     return response.html
 
 
-async def get_item(url: str, page_model: t.Type[PageFragment], **kwargs) -> PageFragment:
-    html: str = await get_html(url, **kwargs)
-    return page_model(html)
+async def get_item(
+        url: str,
+        page_model: t.Type[PageFragment],
+        request_kwargs: dict,
+        model_kwargs: dict
+) -> PageFragment:
+    html: str = await get_html(url, **request_kwargs)
+    return page_model(html, **model_kwargs)
 
 
 async def get_items(
@@ -26,11 +30,9 @@ async def get_items(
         page_model: t.Type[PageFragment],
         items_field_name: str = 'items',
         **kwargs
-) -> t.Sequence[PageFragment]:
+) -> t.AsyncGenerator:
     page = await get_item(url, page_model, **kwargs)
     items: t.Sequence[PageFragment] = getattr(page, items_field_name, None)
-    assert not isinstance(items, Sequence), (
-        f"A sequence of items on field '{items_field_name}' not found on '{page_model}'")
     for item in items:
         if not item.to_be_ignored:
             yield item

@@ -15,3 +15,11 @@ def get_url(current_href: str, relative: str):
 
 def clean_url(page_fragment, selector_list):
     return get_url(page_fragment.domain, selector_list.get())
+
+
+def get_host_from_url(url):
+    """
+    >>> get_host_from_url('https://www.iana.org/domains/reserved')
+    'www.iana.org'
+    """
+    return urllib_parse.urlparse(url).hostname
