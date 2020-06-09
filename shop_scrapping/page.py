@@ -24,6 +24,7 @@ class Field:
 
     def __init__(
             self,
+            *,
             clean: t.Optional[CleanFunction] = None,
             model: t.Type['PageFragment'] = None,
             many: bool = False,
@@ -43,9 +44,9 @@ class Field:
             self._clean = lambda page_fragment, selector_list: \
                 model(selector=selector_list[0], **page_fragment._kwargs)
         elif many:
-            self._clean = lambda page_fragment, selector_list: selector_list.getall()
+            self._clean = lambda _, selector_list: selector_list.getall()
         else:
-            self._clean = lambda page_fragment, selector_list: selector_list.get()
+            self._clean = lambda _, selector_list: selector_list.get()
 
     def __set_name__(self, owner, name):
         self.name = name
@@ -98,27 +99,32 @@ class Field:
 
 
 class XPath(Field):
-    def __init__(self, xpath: str, *args, **kwargs):
+    def __init__(self, xpath: str, **kwargs):
         self.xpath = xpath
-        super(XPath, self).__init__(*args, **kwargs)
+        super(XPath, self).__init__(**kwargs)
 
     def _get_selector(self, page_fragment: 'PageFragment') -> SelectorList:
         return page_fragment._selector.xpath(self.xpath)
 
 
 class Css(Field):
-    def __init__(self, css_selector: str, *args, **kwargs):
+    def __init__(self, css_selector: str, **kwargs):
         self.css_selector = css_selector
-        super(Css, self).__init__(*args, **kwargs)
+        super(Css, self).__init__(**kwargs)
 
     def _get_selector(self, page_fragment: 'PageFragment') -> SelectorList:
         return page_fragment._selector.css(self.css_selector)
 
 
 class Re(Field):
-    def __init__(self, regex: str, *args, **kwargs):
+    def __init__(self, regex: str, *, clean: t.Callable = None, many: bool = False, **kwargs):
         self.regex = regex
-        super(Re, self).__init__(*args, **kwargs)
+        if not clean:
+            if many:
+                clean = lambda _, selected: selected
+            else:
+                clean = lambda _, selected: selected[0] if selected else None
+        super(Re, self).__init__(clean=clean, many=many, **kwargs)
 
     def _get_selector(self, page_fragment: 'PageFragment') -> SelectorList:
         return page_fragment._selector.re(self.regex)

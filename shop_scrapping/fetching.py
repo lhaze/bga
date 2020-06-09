@@ -5,7 +5,7 @@ from ruia import Request
 from shop_scrapping.page import PageFragment
 
 
-async def get_html(url: str, **kwargs) -> str:
+async def fetch_html(url: str, **kwargs) -> str:
     semaphore = kwargs.pop("semaphore", None)
     request = Request(url, **kwargs)
     if semaphore:
@@ -15,23 +15,23 @@ async def get_html(url: str, **kwargs) -> str:
     return response.html
 
 
-async def get_item(
+async def fetch_item(
         url: str,
         page_model: t.Type[PageFragment],
-        request_kwargs: dict,
-        model_kwargs: dict
+        request_kwargs: dict = None,
+        model_kwargs: dict = None,
 ) -> PageFragment:
-    html: str = await get_html(url, **request_kwargs)
-    return page_model(html, **model_kwargs)
+    html: str = await fetch_html(url, **request_kwargs or {})
+    return page_model(html, **model_kwargs or {})
 
 
-async def get_items(
+async def fetch_items(
         url: str,
         page_model: t.Type[PageFragment],
         items_field_name: str = 'items',
         **kwargs
 ) -> t.AsyncGenerator:
-    page = await get_item(url, page_model, **kwargs)
+    page = await fetch_item(url, page_model, **kwargs)
     items: t.Sequence[PageFragment] = getattr(page, items_field_name, None)
     for item in items:
         if not item.to_be_ignored:
