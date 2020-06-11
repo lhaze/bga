@@ -13,7 +13,7 @@ import typing as t
 from pca.data.descriptors import reify
 from pca.utils.imports import import_dotted_path
 
-from shop_scrapping.page import PageFragment
+from shop_scraping.page import PageFragment
 
 
 @dataclass

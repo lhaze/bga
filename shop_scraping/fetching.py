@@ -2,7 +2,7 @@ import typing as t
 
 from ruia import Request
 
-from shop_scrapping.page import PageFragment
+from shop_scraping.page import PageFragment
 
 
 async def fetch_html(url: str, **kwargs) -> str:
