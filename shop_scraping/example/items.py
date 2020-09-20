@@ -8,7 +8,7 @@ from shop_scraping.page import (
 
 
 # for simple spider
-from shop_scraping.task import ScrapingTask, ConcurrencyPolicy, RequestPolicy, SchedulePolicy
+# from shop_scraping.task import ScrapingTask, ConcurrencyPolicy, RequestPolicy, SchedulePolicy
 
 
 class ExamplePage(PageFragment):

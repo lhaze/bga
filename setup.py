@@ -14,7 +14,7 @@ if __name__ == '__main__':
     setup(
         name=PROJECT_NAME,
         version=VERSION,
-        url=f'https://github.com/lhaze/bga',
+        url=f'https://github.com/lhaze/{PROJECT_NAME}',
         author='lhaze',
         author_email='lhaze@lhaze.name',
         platforms='any',

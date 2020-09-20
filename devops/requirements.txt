@@ -18,7 +18,8 @@ wheel~=0.34.2
 # dev tools
 ipython==7.15.0
 pdbpp==0.10.2
-gnureadline==8.0.0
+gnureadline; platform_system != "Windows"
+pyreadline; platform_system == "Windows"
 pytest~=5.4.3
 pytest-flake8==1.0.6
 
