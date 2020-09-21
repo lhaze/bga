@@ -2,9 +2,11 @@ from pathlib import Path
 
 from pca.utils.os import read_from_file
 
+import bgap
+
 DATA_DIRS = (d.resolve() for d in (
     Path(__file__) / '../../data',
-    Path(__file__) / '../../../bgap/data',
+    Path(bgap.__file__) / '../../data',
 ))
 DATA_DIRS = tuple(d for d in DATA_DIRS if d.exists())
 
