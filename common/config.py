@@ -24,6 +24,7 @@ class ProcessConfig:
     >>> ProcessConfig(start=datetime(2019, 8, 14, 12, 50, 32), interval=timedelta(minutes=30))
     ProcessConfig(start=datetime.datetime(2019, 8, 14, 12, 50, 32), interval=datetime.timedelta(seconds=1800))
     """
+
     start: datetime = field(default_factory=datetime.now)
     interval: timedelta = timedelta(hours=1)
 
@@ -80,9 +81,13 @@ class SpiderConfig:
         if isinstance(self.expected_start, str):
             self.expected_start = time.fromisoformat(self.expected_start)
         if isinstance(self.item_list_class, str):
-            self.item_list_class = t.cast(t.Type[PageFragment], import_dotted_path(self.item_list_class))
+            self.item_list_class = t.cast(
+                t.Type[PageFragment], import_dotted_path(self.item_list_class)
+            )
         if self.item_details_class and isinstance(self.item_details_class, str):
-            self.item_details_class = t.cast(t.Type[PageFragment], import_dotted_path(self.item_details_class))
+            self.item_details_class = t.cast(
+                t.Type[PageFragment], import_dotted_path(self.item_details_class)
+            )
 
     def should_start(self):
         """
@@ -112,11 +117,16 @@ class SpiderConfig:
         >>> SpiderConfig(process_config=p, expected_start='12:20:00', is_active=True, **kwargs).should_start()
         False
         """
-        expected_start: datetime = datetime.combine(self.process_config.start_date, self.expected_start)
+        expected_start: datetime = datetime.combine(
+            self.process_config.start_date, self.expected_start
+        )
         expected_end: datetime = expected_start + self.process_config.interval
-        return self.is_active and expected_start <= self.process_config.start <= expected_end
+        return (
+            self.is_active
+            and expected_start <= self.process_config.start <= expected_end
+        )
 
 
 class ExamplePageFragment(PageFragment):
     def items(self) -> t.Generator[dict, None, None]:
-        yield from [{'value': i} for i in range(5)]
+        yield from [{"value": i} for i in range(5)]

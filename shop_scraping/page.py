@@ -7,9 +7,9 @@ from common.exceptions import BgaException
 
 
 Value = t.Union[str, dict, t.List[dict]]
-Model = t.Union['PageFragment', t.List['PageFragment']]
+Model = t.Union["PageFragment", t.List["PageFragment"]]
 ValueOrModel = t.Union[Value, Model]
-CleanFunction = t.Callable[['PageFragment', SelectorList], ValueOrModel]
+CleanFunction = t.Callable[["PageFragment", SelectorList], ValueOrModel]
 
 
 class IgnoreThisItem(BgaException):
@@ -19,16 +19,16 @@ class IgnoreThisItem(BgaException):
 class Field:
 
     _clean: CleanFunction
-    model: t.Type['PageFragment']
+    model: t.Type["PageFragment"]
     many: bool
 
     def __init__(
-            self,
-            *,
-            clean: t.Optional[CleanFunction] = None,
-            model: t.Type['PageFragment'] = None,
-            many: bool = False,
-            name: str = None
+        self,
+        *,
+        clean: t.Optional[CleanFunction] = None,
+        model: t.Type["PageFragment"] = None,
+        many: bool = False,
+        name: str = None,
     ):
         self.model = model
         self.many = many
@@ -38,11 +38,13 @@ class Field:
         if clean:
             self._clean = clean
         elif model and many:
-            self._clean = lambda page_fragment, selector_list: \
-                [model(selector=v, **page_fragment._kwargs) for v in selector_list]
+            self._clean = lambda page_fragment, selector_list: [
+                model(selector=v, **page_fragment._kwargs) for v in selector_list
+            ]
         elif model:
-            self._clean = lambda page_fragment, selector_list: \
-                model(selector=selector_list[0], **page_fragment._kwargs)
+            self._clean = lambda page_fragment, selector_list: model(
+                selector=selector_list[0], **page_fragment._kwargs
+            )
         elif many:
             self._clean = lambda _, selector_list: selector_list.getall()
         else:
@@ -52,37 +54,40 @@ class Field:
         self.name = name
 
     def __get__(
-            self,
-            page_fragment: t.Optional['PageFragment'],
-            owner: t.Optional[t.Type['PageFragment']]
-    ) -> t.Union['Field', ValueOrModel]:
+        self,
+        page_fragment: t.Optional["PageFragment"],
+        owner: t.Optional[t.Type["PageFragment"]],
+    ) -> t.Union["Field", ValueOrModel]:
         if page_fragment is None:
             return self
         value = self._get_value(page_fragment)
         page_fragment.__dict__[self.name] = value
         return value
 
-    def to_value(self, page_fragment: 'PageFragment') -> Value:
+    def to_value(self, page_fragment: "PageFragment") -> Value:
         if self.many and self.model:
             return [m.to_dict() for m in self._get_value(page_fragment)]
         if self.model:
             return self._get_value(page_fragment).to_dict()
         return self._get_value(page_fragment)
 
-    async def async_to_value(self, page_fragment: 'PageFragment'):
+    async def async_to_value(self, page_fragment: "PageFragment"):
         if self.many and self.model:
-            return [await m.async_to_dict() for m in await self._async_get_value(page_fragment)]
+            return [
+                await m.async_to_dict()
+                for m in await self._async_get_value(page_fragment)
+            ]
         if self.model:
             instance = await self._async_get_value(page_fragment)
             return await instance.async_to_dict()
         return await self._async_get_value(page_fragment)
 
-    def _get_value(self, page_fragment: 'PageFragment') -> ValueOrModel:
+    def _get_value(self, page_fragment: "PageFragment") -> ValueOrModel:
         # TODO research for async interface for Selector
         selector = self._get_selector(page_fragment)
         return self._clean(page_fragment, selector)
 
-    async def _async_get_value(self, page_fragment: 'PageFragment') -> ValueOrModel:
+    async def _async_get_value(self, page_fragment: "PageFragment") -> ValueOrModel:
         selector = self._get_selector(page_fragment)
         if isawaitable(self._clean):
             value = await self._clean(page_fragment, selector)
@@ -90,7 +95,7 @@ class Field:
             value = self._clean(page_fragment, selector)
         return value
 
-    def _get_selector(self, page_fragment: 'PageFragment') -> SelectorList:
+    def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
         raise NotImplementedError
 
     def clean(self, method: CleanFunction) -> None:
@@ -103,7 +108,7 @@ class XPath(Field):
         self.xpath = xpath
         super(XPath, self).__init__(**kwargs)
 
-    def _get_selector(self, page_fragment: 'PageFragment') -> SelectorList:
+    def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
         return page_fragment._selector.xpath(self.xpath)
 
 
@@ -112,12 +117,14 @@ class Css(Field):
         self.css_selector = css_selector
         super(Css, self).__init__(**kwargs)
 
-    def _get_selector(self, page_fragment: 'PageFragment') -> SelectorList:
+    def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
         return page_fragment._selector.css(self.css_selector)
 
 
 class Re(Field):
-    def __init__(self, regex: str, *, clean: t.Callable = None, many: bool = False, **kwargs):
+    def __init__(
+        self, regex: str, *, clean: t.Callable = None, many: bool = False, **kwargs
+    ):
         self.regex = regex
         if not clean:
             if many:
@@ -126,7 +133,7 @@ class Re(Field):
                 clean = lambda _, selected: selected[0] if selected else None
         super(Re, self).__init__(clean=clean, many=many, **kwargs)
 
-    def _get_selector(self, page_fragment: 'PageFragment') -> SelectorList:
+    def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
         return page_fragment._selector.re(self.regex)
 
 
@@ -177,15 +184,16 @@ class PageFragment:
     'mylink': {'a': 'image1.html', 'image': 'image1_thumb.jpg'},
     'links': ['<img src="image1_thumb.jpg">', '<img src="image2_thumb.jpg">', '<img src="image3_thumb.jpg">']}
     """
+
     _fields: t.Dict[str, t.Optional[Field]] = {}
     to_be_ignored: bool = False
 
     def __init__(
-            self,
-            text: str = None,
-            selector: Selector = None,
-            fields: t.Mapping[str, Field] = None,
-            **kwargs
+        self,
+        text: str = None,
+        selector: Selector = None,
+        fields: t.Mapping[str, Field] = None,
+        **kwargs,
     ):
         self.html = text
         self._selector = selector or Selector(text=text)

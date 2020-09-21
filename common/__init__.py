@@ -8,4 +8,4 @@ def get_dir(*path_elements: str) -> str:
 
 
 def get_data_dir(*path_elements: str) -> str:
-    return get_dir('data', *path_elements)
+    return get_dir("data", *path_elements)

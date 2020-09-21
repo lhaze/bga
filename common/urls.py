@@ -2,7 +2,7 @@ from urllib import parse as urllib_parse
 import typing as t
 
 
-Url = t.NewType('Url', str)
+Url = t.NewType("Url", str)
 
 
 def get_url(current_href: str, relative: str) -> Url:
@@ -14,7 +14,7 @@ def get_url(current_href: str, relative: str) -> Url:
     >>> get_url('https://www.iana.org/domains/reserved#foo', '/domains/int')
     'https://www.iana.org/domains/int'
     """
-    return Url(urllib_parse.urljoin(current_href + '/', relative))
+    return Url(urllib_parse.urljoin(current_href + "/", relative))
 
 
 def clean_url(page_fragment, selector_list) -> Url:
