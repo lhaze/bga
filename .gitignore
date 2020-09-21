@@ -18,13 +18,14 @@ dist/
 *.swp
 *~
 .idea
+.vscode
 *.bat
 
 # DB
 *.db
 *.db-journal
 
-# workbench folders
+# workbench files/folders
 data/
 workbench.py
 scratch.py
