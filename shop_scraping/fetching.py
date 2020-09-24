@@ -36,3 +36,16 @@ async def fetch_items(
     for item in items:
         if not item.to_be_ignored:
             yield item
+
+
+async def fetch(url, client):
+    async with client.get(url) as response:
+        delay = response.headers.get("DELAY")
+        date = response.headers.get("DATE")
+        print("{}:{} with delay {}".format(date, response.url, delay))
+        return await response.read()
+
+
+async def bound_fetch(semaphore, url, client):
+    async with semaphore:
+        return await fetch(url, client)

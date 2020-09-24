@@ -11,18 +11,19 @@ from dataclasses import (
 import typing as t
 
 from pca.data.descriptors import reify
-from pca.utils.imports import import_dotted_path
 
 from shop_scraping.page import PageFragment
 
 
 @dataclass
-class ProcessConfig:
+class ProcessState:
     """
-    >>> ProcessConfig()
-    ProcessConfig(start=datetime.datetime(...), interval=datetime.timedelta(seconds=3600))
-    >>> ProcessConfig(start=datetime(2019, 8, 14, 12, 50, 32), interval=timedelta(minutes=30))
-    ProcessConfig(start=datetime.datetime(2019, 8, 14, 12, 50, 32), interval=datetime.timedelta(seconds=1800))
+    State of the process run.
+
+    >>> ProcessState()
+    ProcessState(start=datetime.datetime(...), interval=datetime.timedelta(seconds=3600))
+    >>> ProcessState(start=datetime(2019, 8, 14, 12, 50, 32), interval=timedelta(minutes=30))
+    ProcessState(start=datetime.datetime(2019, 8, 14, 12, 50, 32), interval=datetime.timedelta(seconds=1800))
     """
 
     start: datetime = field(default_factory=datetime.now)
@@ -31,7 +32,7 @@ class ProcessConfig:
     @reify
     def start_date(self) -> date:
         """
-        >>> ProcessConfig(start=datetime(2019, 8, 14, 12, 50, 32)).start_date
+        >>> ProcessState(start=datetime(2019, 8, 14, 12, 50, 32)).start_date
         datetime.date(2019, 8, 14)
         """
         return self.start.date()
@@ -39,94 +40,144 @@ class ProcessConfig:
     @reify
     def start_date_iso(self) -> str:
         """
-        >>> ProcessConfig(start=datetime(2019, 8, 14, 12, 50, 32)).start_date_iso
+        >>> ProcessState(start=datetime(2019, 8, 14, 12, 50, 32)).start_date_iso
         '2019-08-14'
         """
         return self.start_date.isoformat()
 
 
 @dataclass
+class ConcurrencyPolicy:
+    task_limit: int = 3
+    request_delay: float = 0.5  # in seconds
+
+
+@dataclass
+class RequestPolicy:
+    user_agent: str = "python/requests"
+
+    @property
+    def headers(self) -> t.Dict[str, str]:
+        return {
+            "user-agent": self.user_agent,
+        }
+
+    @property
+    def kwargs(self) -> t.Dict[str, t.Any]:
+        return {
+            "headers": self.headers,
+        }
+
+
+@dataclass
+class SchedulePolicy:
+    expected_start: time = time(hour=0)
+
+
+@dataclass
 class SpiderConfig:
     """
-    >>> p = ProcessConfig(start=datetime(2019, 8, 14, 12, 50, 32))
-    >>> SpiderConfig(
-    ...     process_config=p,
+    >>> from dataclasses import asdict
+    >>> sc = SpiderConfig(  # full setup
     ...     name='name',
     ...     domain='domain',
     ...     allowed_domains=['allowed'],
     ...     start_urls=['start_urls'],
-    ...     expected_start='12:51:00',
-    ...     item_details_class='common.config.ExamplePageFragment',
-    ...     item_list_class='common.config.ExamplePageFragment',
-    ...     is_active=True
-    ... )   # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-    SpiderConfig(process_config=ProcessConfig(start=datetime.datetime(2019, 8, 14, 12, 50, 32),
-    interval=datetime.timedelta(seconds=3600)), name='name', domain='domain', allowed_domains=['allowed'],
-    start_urls=['start_urls'], expected_start=datetime.time(12, 51),
-    item_list_class=<class 'common.config.ExamplePageFragment'>,
-    item_details_class=<class 'common.config.ExamplePageFragment'>, is_active=True)
+    ...     is_active=True,
+    ...     start_model='start_model',
+    ...     catalogue_model='catalogue_model',
+    ...     details_model='details_model',
+    ... )
+    >>> asdict(sc)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    {'name': 'name',
+     'domain': 'domain',
+     'allowed_domains': ['allowed'],
+     'start_urls': ['start_urls'],
+     'is_active': True,
+     'start_model': 'start_model',
+     'catalogue_model': 'catalogue_model',
+     'details_model': 'details_model',
+     'concurrency_policy': {'task_limit': 3, 'request_delay': 0.5},
+     'request_policy': {'user_agent': 'python/requests'},
+     'schedule_policy': {'expected_start': datetime.time(0, 0)}}
+    >>> SpiderConfig(
+    ...     name='name',
+    ...     domain='domain'
+    ... )  # minimal model setup checked
+    Traceback (most recent call last):
+     ...
+    AssertionError: One of models - either `start_model` or `catalogue_model` - is needed
+    >>> sc = SpiderConfig(
+    ...     name='name',
+    ...     domain='domain',
+    ...     start_model='start_model'
+    ... )  # minimal setup
+    >>> asdict(sc)
+    {'name': 'name',
+     'domain': 'domain',
+     'allowed_domains': {'domain'},
+     'start_urls': ['domain'],
+     'is_active': True,
+     'start_model': 'start_model',
+     'catalogue_model': None,
+     'details_model': None,
+     'concurrency_policy': {'task_limit': 3, 'request_delay': 0.5},
+     'request_policy': {'user_agent': 'python/requests'},
+     'schedule_policy': {'expected_start': datetime.time(0, 0)}}
     """
 
-    process_config: ProcessConfig
     name: str
     domain: str
-    allowed_domains: t.List[str]
-    start_urls: t.List[str]
-    expected_start: t.Union[str, time]
-    item_list_class: t.Union[str, t.Type[PageFragment]]
-    item_details_class: t.Union[str, t.Type[PageFragment], None] = None
+    allowed_domains: t.Optional[t.Set[str]] = None
+    start_urls: t.Optional[t.List[str]] = None
     is_active: bool = True
 
-    def __post_init__(self):
-        if isinstance(self.expected_start, str):
-            self.expected_start = time.fromisoformat(self.expected_start)
-        if isinstance(self.item_list_class, str):
-            self.item_list_class = t.cast(
-                t.Type[PageFragment], import_dotted_path(self.item_list_class)
-            )
-        if self.item_details_class and isinstance(self.item_details_class, str):
-            self.item_details_class = t.cast(
-                t.Type[PageFragment], import_dotted_path(self.item_details_class)
-            )
+    start_model: t.Optional[t.Type[PageFragment]] = None
+    catalogue_model: t.Optional[t.Type[PageFragment]] = None
+    details_model: t.Optional[t.Type[PageFragment]] = None
 
-    def should_start(self):
+    concurrency_policy: ConcurrencyPolicy = ConcurrencyPolicy()
+    request_policy: RequestPolicy = RequestPolicy()
+    schedule_policy: SchedulePolicy = SchedulePolicy()
+
+    def __post_init__(self) -> None:
+        if self.start_urls is None:
+            self.start_urls = [self.domain]
+        if self.allowed_domains is None:
+            self.allowed_domains = {self.domain}
+        assert (
+            self.start_model or self.catalogue_model
+        ), "One of models - either `start_model` or `catalogue_model` - is needed"
+        if self.start_model is None:
+            self.start_model = self.catalogue_model
+
+    def should_start(self, process_state: ProcessState):
         """
         >>> kwargs = dict(
         ...     name='name',
         ...     domain='domain',
-        ...     allowed_domains=['allowed'],
-        ...     start_urls=['start_urls'],
-        ...     item_details_class='common.config.ExamplePageFragment',
-        ...     item_list_class='common.config.ExamplePageFragment',
+        ...     is_active=True,
+        ...     start_model='start_model',
+        ...     schedule_policy=SchedulePolicy(expected_start=time(12, 20))
         ... )
-        >>> p = ProcessConfig(datetime(2019, 8, 14, 12, 50, 32))
+        >>> ps = ProcessState(start=datetime(2019, 8, 14, 12, 50, 32))
         >>> # inside the time slot
-        >>> SpiderConfig(process_config=p, expected_start='12:20:00', is_active=True, **kwargs).should_start()
+        >>> SpiderConfig(**kwargs).should_start(ps)
         True
-        >>> # is_active
-        >>> SpiderConfig(process_config=p, expected_start='12:20:00', is_active=False, **kwargs).should_start()
+        >>> # is_active is False
+        >>> SpiderConfig(**dict(kwargs, is_active=False)).should_start(ps)
         False
         >>> # before time slot
-        >>> SpiderConfig(process_config=p, expected_start='10:00:00', is_active=True, **kwargs).should_start()
+        >>> SpiderConfig(**dict(kwargs, schedule_policy=SchedulePolicy(expected_start=time(10, 0)))).should_start(ps)
         False
         >>> # after time slot
-        >>> SpiderConfig(process_config=p, expected_start='15:00:00', is_active=True, **kwargs).should_start()
+        >>> SpiderConfig(**dict(kwargs, schedule_policy=SchedulePolicy(expected_start=time(15, 0)))).should_start(ps)
         False
         >>> # shorter time slot
-        >>> p.interval = timedelta(minutes=1)
-        >>> SpiderConfig(process_config=p, expected_start='12:20:00', is_active=True, **kwargs).should_start()
+        >>> ps.interval = timedelta(minutes=1)
+        >>> SpiderConfig(**kwargs).should_start(ps)
         False
         """
-        expected_start: datetime = datetime.combine(
-            self.process_config.start_date, self.expected_start
-        )
-        expected_end: datetime = expected_start + self.process_config.interval
-        return (
-            self.is_active
-            and expected_start <= self.process_config.start <= expected_end
-        )
-
-
-class ExamplePageFragment(PageFragment):
-    def items(self) -> t.Generator[dict, None, None]:
-        yield from [{"value": i} for i in range(5)]
+        expected_start: datetime = datetime.combine(process_state.start_date, self.schedule_policy.expected_start)
+        expected_end: datetime = expected_start + process_state.interval
+        return self.is_active and expected_start <= process_state.start <= expected_end

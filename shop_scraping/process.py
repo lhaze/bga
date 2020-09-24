@@ -1,18 +1,19 @@
+import asyncio
 import typing as t
 
 import blinker
-
-# from pca.utils.serialization import load
-# from pca.utils.imports import maybe_dotted
+from httpx import AsyncClient
 from python_path import PythonPath
 
 with PythonPath("..", relative_to=__file__):
-    from common.config import ProcessConfig, SpiderConfig
+    from common.config import ProcessState, SpiderConfig
+
+from .fetching import bound_fetch
 
 
-process_crawler_registering = blinker.signal("process:crawler_registering")
-process_crawler_start = blinker.signal("process:crawler_start")
-process_crawler_end = blinker.signal("process:crawler_end")
+process_spider_registering = blinker.signal("process:spider_registering")
+process_spider_start = blinker.signal("process:spider_start")
+process_spider_end = blinker.signal("process:spider_end")
 
 
 def load_config_dict(config_file: t.IO) -> dict:
@@ -33,19 +34,36 @@ def load_config_dict(config_file: t.IO) -> dict:
     }
 
 
-def get_configs(config_content: dict) -> t.List[SpiderConfig]:
-    process_config = ProcessConfig(config_content.get("process_config", {}))
+class Spider:
+    def __init__(self, config: SpiderConfig, process_state: ProcessState):
+        self.config = config
+        self.process_state = process_state
+        self.semaphore = asyncio.Semaphore(config.concurrency_policy.task_limit)
+
+    async def run(self):
+        tasks = []
+        url = self.config.start_urls[0]
+
+        # Create client session that will ensure we dont open new connection
+        # per each request.
+        async with AsyncClient() as client:
+            # pass Semaphore and session to every GET request
+            task = asyncio.create_task(bound_fetch(self.semaphore, url, client))
+            tasks.append(task)
+
+            responses = await asyncio.gather(*tasks)
+            await responses
+
+
+def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
+    from bgap import shops
     return [
-        SpiderConfig(process_config=process_config, name=name, **d)
-        for name, d in config_content.get("spider_configs", {}).items()
+        config
+        for config in shops.CONFIGS
+        if config.should_start(process_state)
     ]
 
 
-def construct_scrappers(config: str):
-    return []
-
-
-def process_scrappers(spider, process):
-    process_crawler_start.send(process)
-    spider.start()  # the script will block here until all crawling jobs are finished
-    process_crawler_end.send(process)
+def get_spiders(process_state: ProcessState) -> t.List[Spider]:
+    configs = get_active_configs(process_state)
+    return [Spider(config=config, process_state=process_state) for config in configs]

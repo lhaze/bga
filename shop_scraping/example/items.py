@@ -7,10 +7,6 @@ from shop_scraping.page import (
 )
 
 
-# for simple spider
-# from shop_scraping.task import ScrapingTask, ConcurrencyPolicy, RequestPolicy, SchedulePolicy
-
-
 class ExamplePage(PageFragment):
     title = XPath("//head/title/text()")
     link_for_more = Css("div p a::attr(href)")
@@ -36,13 +32,3 @@ class StartPage(PageModel):
 
 class CataloguePage(PageModel):
     items = Css(".navigation a", many=True, model=ExampleMoreLink)
-
-
-# class ExampleTask(ScrapingTask):
-#     name = 'example.com'
-#     start_urls = ['http://example.com']
-#     start_model = StartPage
-#     catalogue_model = CataloguePage
-#     concurrency_policy = ConcurrencyPolicy()
-#     request_policy = RequestPolicy()
-#     schedule_policy = SchedulePolicy()
