@@ -12,7 +12,8 @@ import typing as t
 
 from pca.data.descriptors import reify
 
-from shop_scraping.page import PageFragment
+from .page import PageFragment
+from .fetching import Response
 
 
 @dataclass
@@ -50,11 +51,15 @@ class ProcessState:
 class ConcurrencyPolicy:
     task_limit: int = 3
     request_delay: float = 0.5  # in seconds
+    url_retries: int = 2
+    retry_delay: float = 0.5  # in seconds
 
 
 @dataclass
 class RequestPolicy:
     user_agent: str = "python/requests"
+    timeout: int = 5
+    is_valid: t.Optional[t.Callable[[Response], bool]] = None
 
     @property
     def headers(self) -> t.Dict[str, str]:
@@ -97,8 +102,8 @@ class SpiderConfig:
      'start_model': 'start_model',
      'catalogue_model': 'catalogue_model',
      'details_model': 'details_model',
-     'concurrency_policy': {'task_limit': 3, 'request_delay': 0.5},
-     'request_policy': {'user_agent': 'python/requests'},
+     'concurrency_policy': {'task_limit': 3, 'request_delay': 0.5, 'url_retries': 2, 'retry_delay': 0.5},
+     'request_policy': {'user_agent': 'python/requests', 'timeout': 5, 'is_valid': None},
      'schedule_policy': {'expected_start': datetime.time(0, 0)}}
     >>> SpiderConfig(
     ...     name='name',
@@ -121,8 +126,8 @@ class SpiderConfig:
      'start_model': 'start_model',
      'catalogue_model': None,
      'details_model': None,
-     'concurrency_policy': {'task_limit': 3, 'request_delay': 0.5},
-     'request_policy': {'user_agent': 'python/requests'},
+     'concurrency_policy': {'task_limit': 3, 'request_delay': 0.5, 'url_retries': 2, 'retry_delay': 0.5},
+     'request_policy': {'user_agent': 'python/requests', 'timeout': 5, 'is_valid': None},
      'schedule_policy': {'expected_start': datetime.time(0, 0)}}
     """
 

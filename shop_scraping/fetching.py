@@ -1,5 +1,6 @@
 import typing as t
 
+from httpx import Response  # noqa: F401
 from ruia import Request
 
 from shop_scraping.page import PageFragment
@@ -26,10 +27,7 @@ async def fetch_item(
 
 
 async def fetch_items(
-    url: str,
-    page_model: t.Type[PageFragment],
-    items_field_name: str = "items",
-    **kwargs
+    url: str, page_model: t.Type[PageFragment], items_field_name: str = "items", **kwargs
 ) -> t.AsyncGenerator:
     page = await fetch_item(url, page_model, **kwargs)
     items: t.Sequence[PageFragment] = getattr(page, items_field_name, None)

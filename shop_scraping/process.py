@@ -3,11 +3,8 @@ import typing as t
 
 import blinker
 from httpx import AsyncClient
-from python_path import PythonPath
 
-with PythonPath("..", relative_to=__file__):
-    from common.config import ProcessState, SpiderConfig
-
+from .config import ProcessState, SpiderConfig
 from .fetching import bound_fetch
 
 
@@ -57,11 +54,8 @@ class Spider:
 
 def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
     from bgap import shops
-    return [
-        config
-        for config in shops.CONFIGS
-        if config.should_start(process_state)
-    ]
+
+    return [config for config in shops.CONFIGS if config.should_start(process_state)]
 
 
 def get_spiders(process_state: ProcessState) -> t.List[Spider]:
