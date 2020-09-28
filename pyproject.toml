@@ -7,15 +7,17 @@ license = "Proprietary"
 authors = ["lhaze <lhaze@lhaze.name>"]
 description = ""
 packages = [
+    { include = "common" },
     { include = "shop_scraping" },
 ]
 
 [tool.poetry.scripts]
+bga_url_tester = 'shop_scraping.url_tester:command'
 
 [tool.poetry.dependencies]
 python = "^3.8"
 # core
-bgap = { path = "../bgap/" }  # {git = "ssh://git@github.com/lhaze/bgap.git"}
+bgap = { path = "../bgap/" }
 python-clean-architecture = "^0.0.6"
 parsel = "1.6.0"
 ruia = {version = "~0.6.7"}  # , extras=["uvloop"]

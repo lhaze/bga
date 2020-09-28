@@ -1,19 +1,14 @@
 import typing as t
 
-from httpx import Response  # noqa: F401
-from ruia import Request
+from httpx import AsyncClient, Response  # noqa: F401
 
 from shop_scraping.page import PageFragment
 
 
 async def fetch_html(url: str, **kwargs) -> str:
-    semaphore = kwargs.pop("semaphore", None)
-    request = Request(url, **kwargs)
-    if semaphore:
-        _, response = await request.fetch_callback(sem=semaphore)
-    else:
-        response = await request.fetch()
-    return response.html
+    async with AsyncClient(**kwargs) as client:
+        response = await client.get(url, **kwargs)
+    return response.text
 
 
 async def fetch_item(
