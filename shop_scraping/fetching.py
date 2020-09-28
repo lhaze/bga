@@ -1,14 +1,14 @@
 import typing as t
 
-from httpx import AsyncClient, Response  # noqa: F401
+from httpx import AsyncClient, Response
 
 from shop_scraping.page import PageFragment
 
 
-async def fetch_html(url: str, **kwargs) -> str:
+async def fetch_response(url: str, **kwargs) -> Response:
     async with AsyncClient(**kwargs) as client:
         response = await client.get(url, **kwargs)
-    return response.text
+    return response
 
 
 async def fetch_item(
@@ -17,7 +17,8 @@ async def fetch_item(
     request_kwargs: dict = None,
     model_kwargs: dict = None,
 ) -> PageFragment:
-    html: str = await fetch_html(url, **request_kwargs or {})
+    response: Response = await fetch_response(url, **request_kwargs or {})
+    html: str = response.text
     return page_model(html, **model_kwargs or {})
 
 

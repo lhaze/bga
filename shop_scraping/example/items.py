@@ -1,7 +1,7 @@
-from shop_scraping.model import PageModel
 from shop_scraping.page import (
     Css,
     PageFragment,
+    PageModel,
     Re,
     XPath,
 )

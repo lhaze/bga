@@ -4,6 +4,7 @@ from inspect import isawaitable
 from parsel import Selector, SelectorList
 
 from common.exceptions import BgaException
+from common.urls import Url
 
 
 Value = t.Union[str, dict, t.List[dict]]
@@ -224,3 +225,13 @@ class PageFragment:
     def __repr__(self):
         data = repr(self._selector.get()[:40])
         return f"<{self.__class__.__name__} xpath={self._selector._expr} data={data}>"
+
+
+class PageModel(PageFragment):
+    catalogue_urls: t.Sequence[Url] = ()
+    details_urls: t.Sequence[Url] = ()
+    items: t.Sequence[PageFragment] = ()
+
+    @property
+    def extracted(self) -> t.List[dict]:
+        return [i.to_dict() for i in self.items]
