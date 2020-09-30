@@ -8,9 +8,12 @@ from .config import ProcessState, SpiderConfig
 from .fetching import bound_fetch
 
 
+process_started = blinker.signal("process:started")
 process_spider_registering = blinker.signal("process:spider_registering")
 process_spider_start = blinker.signal("process:spider_start")
 process_spider_end = blinker.signal("process:spider_end")
+process_error = blinker.signal("process:error")
+process_finished = blinker.signal("process:finished")
 
 
 def load_config_dict(config_file: t.IO) -> dict:
@@ -49,13 +52,13 @@ class Spider:
             tasks.append(task)
 
             responses = await asyncio.gather(*tasks)
-            await responses
+            return responses
 
 
 def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
-    from bgap import shops
+    from bgap import shops_meta
 
-    return [config for config in shops.CONFIGS if config.should_start(process_state)]
+    return [config for config in shops_meta.CONFIGS if config.should_start(process_state)]
 
 
 def get_spiders(process_state: ProcessState) -> t.List[Spider]:

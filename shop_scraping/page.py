@@ -43,9 +43,7 @@ class Field:
                 model(selector=v, **page_fragment._kwargs) for v in selector_list
             ]
         elif model:
-            self._clean = lambda page_fragment, selector_list: model(
-                selector=selector_list[0], **page_fragment._kwargs
-            )
+            self._clean = lambda page_fragment, selector_list: model(selector=selector_list[0], **page_fragment._kwargs)
         elif many:
             self._clean = lambda _, selector_list: selector_list.getall()
         else:
@@ -74,10 +72,7 @@ class Field:
 
     async def async_to_value(self, page_fragment: "PageFragment"):
         if self.many and self.model:
-            return [
-                await m.async_to_dict()
-                for m in await self._async_get_value(page_fragment)
-            ]
+            return [await m.async_to_dict() for m in await self._async_get_value(page_fragment)]
         if self.model:
             instance = await self._async_get_value(page_fragment)
             return await instance.async_to_dict()
@@ -123,9 +118,7 @@ class Css(Field):
 
 
 class Re(Field):
-    def __init__(
-        self, regex: str, *, clean: t.Callable = None, many: bool = False, **kwargs
-    ):
+    def __init__(self, regex: str, *, clean: t.Callable = None, many: bool = False, **kwargs):
         self.regex = regex
         if not clean:
             if many:

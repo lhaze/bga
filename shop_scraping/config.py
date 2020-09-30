@@ -22,13 +22,15 @@ class ProcessState:
     State of the process run.
 
     >>> ProcessState()
-    ProcessState(start=datetime.datetime(...), interval=datetime.timedelta(seconds=3600))
-    >>> ProcessState(start=datetime(2019, 8, 14, 12, 50, 32), interval=timedelta(minutes=30))
-    ProcessState(start=datetime.datetime(2019, 8, 14, 12, 50, 32), interval=datetime.timedelta(seconds=1800))
+    ProcessState(start=datetime.datetime(...), interval=datetime.timedelta(seconds=900), timeout=3600)
+    >>> ProcessState(start=datetime(2019, 8, 14, 12, 50, 32), interval=timedelta(minutes=30), timeout=20)
+    ProcessState(start=datetime.datetime(2019, 8, 14, 12, 50, 32), interval=datetime.timedelta(seconds=1800),
+    timeout=20)
     """
 
     start: datetime = field(default_factory=datetime.now)
-    interval: timedelta = timedelta(hours=1)
+    interval: timedelta = timedelta(minutes=15)
+    timeout: int = 3600  # in seconds
 
     @reify
     def start_date(self) -> date:
@@ -165,7 +167,7 @@ class SpiderConfig:
         ...     start_model='start_model',
         ...     schedule_policy=SchedulePolicy(expected_start=time(12, 20))
         ... )
-        >>> ps = ProcessState(start=datetime(2019, 8, 14, 12, 50, 32))
+        >>> ps = ProcessState(start=datetime(2019, 8, 14, 12, 30, 32))
         >>> # inside the time slot
         >>> SpiderConfig(**kwargs).should_start(ps)
         True
