@@ -1,58 +1,65 @@
 import asyncio
+from asyncio import Task
+from os import name
 import typing as t
 
-import blinker
 from httpx import AsyncClient
+
+from common.measures import Timer
+from common.urls import Url
 
 from .config import ProcessState, SpiderConfig
 from .fetching import bound_fetch
-
-
-process_started = blinker.signal("process:started")
-process_spider_registering = blinker.signal("process:spider_registering")
-process_spider_start = blinker.signal("process:spider_start")
-process_spider_end = blinker.signal("process:spider_end")
-process_error = blinker.signal("process:error")
-process_finished = blinker.signal("process:finished")
-
-
-def load_config_dict(config_file: t.IO) -> dict:
-    return {
-        "process_config": {},
-        "spider_configs": {
-            "planszoman": {
-                "domain": "domain",
-                "is_active": True,
-                "allowed_domains": ["allowed"],
-                "start_urls": ["start_urls"],
-                "rules": [],
-                "item_list_class": "common.page_model.TestPageFragment",
-                "item_details_class": None,
-                "expected_start": "12:20:00",
-            },
-        },
-    }
+from .page import PageModel
+from .signals import process_signals
 
 
 class Spider:
+    RUN_CHECK_INTERVAL = 5  # in seconds
+
     def __init__(self, config: SpiderConfig, process_state: ProcessState):
         self.config = config
         self.process_state = process_state
-        self.semaphore = asyncio.Semaphore(config.concurrency_policy.task_limit)
+        self._semaphore = asyncio.Semaphore(config.concurrency_policy.task_limit)
+        self._client = AsyncClient(**config.request_policy.client_kwargs)
+        self._urls_processed: t.MutableSet[Url] = set()
+        self._tasks: t.MutableSet[Task] = set()
+        process_signals.spider_registered.send(self)
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} {self.config.name} {id(self)}>"
 
     async def run(self):
-        tasks = []
-        url = self.config.start_urls[0]
+        process_signals.spider_started.send(self)
+        self._create_tasks(self.config.start_urls, self.config.start_model)
+        while len(self._tasks):
+            done, pending = await asyncio.wait(self._tasks, timeout=self.RUN_CHECK_INTERVAL)
+            process_signals.spider_ticked.send(self, done=done, pending=pending)
+            self._tasks.difference_update(done)
+        process_signals.spider_ended.send(self)
 
-        # Create client session that will ensure we dont open new connection
-        # per each request.
-        async with AsyncClient() as client:
-            # pass Semaphore and session to every GET request
-            task = asyncio.create_task(bound_fetch(self.semaphore, url, client))
-            tasks.append(task)
+    def _create_tasks(self, urls: t.List[Url], model: PageModel) -> None:
+        new_urls = set(urls) - self._urls_processed
+        for url in new_urls:
+            task = asyncio.create_task(self._process_url(url, model), name=url)
+            self._urls_processed.add(url)
+            self._tasks.add(task)
+            process_signals.url_registered.send(self, level="DEBUG", task=task)
 
-            responses = await asyncio.gather(*tasks)
-            return responses
+    async def _process_url(self, url: Url, model_class: t.Type[PageModel]):
+        process_signals.url_processed.send(self, url=url, model_class=model_class)
+        response = await self._make_request(url=url)
+        model = model_class(response.text)
+        process_signals.url_processed.send(self, url=url, model_class=model_class, extracted=model.extracted)
+        # save results
+        # create new tasks
+
+    async def _make_request(self, url):
+        await asyncio.sleep(self.config.concurrency_policy.request_delay)  # TODO coordinate between requests
+        with Timer() as t:
+            response = await bound_fetch(self._semaphore, url, self._client)
+        process_signals.url_responded.send(self, level="INFO", url=url, response=response, timer=t.serialize())
+        return response
 
 
 def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:

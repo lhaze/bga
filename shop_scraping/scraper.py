@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+from time import process_time
 import typing as t
 
 import click
@@ -8,42 +9,35 @@ from rich import print as rprint
 from common.debugging import (
     interactive_stop,
     post_mortem,
-    timing,
 )
-
+from common.measures import Timer
 from .process import (
     get_spiders,
-    process_error,
-    process_finished,
+    process_signals,
     ProcessState,
     Spider,
 )
 
 
-@timing(lambda time_info: process_finished.send(time_info))
-def async_main(spiders: t.Sequence[Spider], process_state: ProcessState):
-    loop = asyncio.get_event_loop()
+async def async_main(spiders: t.Sequence[Spider], process_state: ProcessState):
     awaitables = (spider.run() for spider in spiders)
     try:
-        result = loop.run_until_complete(asyncio.wait_for(asyncio.gather(*awaitables), timeout=process_state.timeout))
-    except asyncio.TimeoutError as e:
-        process_error.send(e)
-        raise
-    return result
+        await asyncio.wait_for(asyncio.gather(*awaitables), timeout=process_state.timeout)
+    except (asyncio.TimeoutError, asyncio.CancelledError) as e:
+        process_signals.error.send(process_state, error=e)
 
 
 def scraper(interactive: bool):
     ps = ProcessState(start=datetime.datetime.now(), interval=datetime.timedelta(hours=24))
     spiders = get_spiders(ps)
-    if interactive:
-        interactive_stop("process starting", locals())
-    if not spiders:
-        pass
-    result = async_main(spiders, ps)
-    if interactive:
-        interactive_stop("process finished", locals())
-    else:
-        rprint(result)
+    process_signals.started.send(ps, spiders=spiders)
+    interactive_stop(interactive, "process starting", locals())
+    with Timer() as timer:
+        if spiders:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(async_main(spiders, ps))
+    process_signals.finished.send(ps, spiders=spiders, timer=timer.serialize())
+    interactive_stop(interactive, "process finished", locals())
 
 
 @click.command()

@@ -42,6 +42,17 @@ python-versions = ">=3.5.3"
 version = "3.0.1"
 
 [[package]]
+category = "main"
+description = ""
+name = "asyncblink"
+optional = false
+python-versions = "*"
+version = "0.3.2"
+
+[package.dependencies]
+blinker = ">=1.3"
+
+[[package]]
 category = "dev"
 description = "Atomic file writes."
 marker = "sys_platform == \"win32\""
@@ -1083,7 +1094,7 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [metadata]
-content-hash = "d0b6b9f55705f4985eb3a0be71710d62cdfaa1b56671393bf6f2c3032a87ce05"
+content-hash = "fc34fd2c747e12f216c326a4c9fd44bffe3bada5a4301f4760ea71d1f99c04b9"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1113,6 +1124,9 @@ appnope = [
 async-timeout = [
     {file = "async-timeout-3.0.1.tar.gz", hash = "sha256:0c3c816a028d47f659d6ff5c745cb2acf1f966da1fe5c19c77a70282b25f4c5f"},
     {file = "async_timeout-3.0.1-py3-none-any.whl", hash = "sha256:4291ca197d287d274d0b6cb5d6f8f8f82d434ed288f962539ff18cc9012f9ea3"},
+]
+asyncblink = [
+    {file = "asyncblink-0.3.2.tar.gz", hash = "sha256:40b7b48399cd27b5594f6b7134df92ad36066d9bef12a108d4f27737b3e01598"},
 ]
 atomicwrites = [
     {file = "atomicwrites-1.4.0-py2.py3-none-any.whl", hash = "sha256:6d1784dea7c0c8d4a5172b6c620f40b6e4cbfdf96d783691f2e1302a7b88e197"},

@@ -5,6 +5,7 @@ __pypackages__/
 *$py.class
 .cache
 .pytest_cache
+.mypy_cache
 
 # build & test
 build/

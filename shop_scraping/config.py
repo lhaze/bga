@@ -70,7 +70,7 @@ class RequestPolicy:
         }
 
     @property
-    def kwargs(self) -> t.Dict[str, t.Any]:
+    def client_kwargs(self) -> t.Dict[str, t.Any]:
         return {
             "headers": self.headers,
         }
