@@ -20,6 +20,9 @@ def timing(callback: t.Callable[[t.Dict[str, str]], None]):
 
 
 class Timer(object):
+    wall_elapsed: int = None
+    process_elapsed: int = None
+
     def __init__(self):
         self.wall_timer = time.perf_counter
         self.process_timer = time.process_time

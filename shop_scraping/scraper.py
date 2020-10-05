@@ -22,7 +22,9 @@ from .process import (
 async def async_main(spiders: t.Sequence[Spider], process_state: ProcessState):
     awaitables = (spider.run() for spider in spiders)
     try:
-        await asyncio.wait_for(asyncio.gather(*awaitables), timeout=process_state.timeout)
+        await asyncio.gather(
+            *awaitables
+        )  # asyncio.wait_for(asyncio.gather(*awaitables), timeout=process_state.timeout)
     except (asyncio.TimeoutError, asyncio.CancelledError) as e:
         process_signals.error.send(process_state, error=e)
 

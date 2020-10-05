@@ -51,6 +51,7 @@ class ProcessState:
 
 @dataclass
 class ConcurrencyPolicy:
+    task_check_interval: int = 5  # in seconds
     task_limit: int = 3
     request_delay: float = 0.5  # in seconds
     url_retries: int = 2

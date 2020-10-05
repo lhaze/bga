@@ -30,6 +30,7 @@ marshmallow = "^3.8.0"
 httpx = "^0.14.3"
 rich = "^7.1.0"
 asyncblink = "^0.3.2"
+aiotinydb = "^1.2.2"
 
 [tool.poetry.dev-dependencies]
 pip = "~20.1.1"

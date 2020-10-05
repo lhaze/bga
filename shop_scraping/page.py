@@ -225,6 +225,9 @@ class PageModel(PageFragment):
     details_urls: t.Sequence[Url] = ()
     items: t.Sequence[PageFragment] = ()
 
+    def is_valid_response(self) -> bool:
+        return True
+
     @property
     def extracted(self) -> t.List[dict]:
-        return [i.to_dict() for i in self.items]
+        return [value for i in self.items if (value := i.to_dict())]
