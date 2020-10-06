@@ -26,6 +26,22 @@ speedups = ["aiodns", "brotlipy", "cchardet"]
 
 [[package]]
 category = "main"
+description = "Asynchronous logging for python and asyncio"
+name = "aiologger"
+optional = false
+python-versions = ">=3.6"
+version = "0.6.0"
+
+[package.dependencies]
+[package.dependencies.aiofiles]
+optional = true
+version = "0.4.0"
+
+[package.extras]
+aiofiles = ["aiofiles (0.4.0)"]
+
+[[package]]
+category = "main"
 description = "asyncio compatibility shim for tinydb"
 name = "aiotinydb"
 optional = false
@@ -1122,7 +1138,7 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [metadata]
-content-hash = "a15324ecf35e917276f1114aa983fe14d6dc27da556e369a7db5c8b293fbb897"
+content-hash = "ba9fb1262953f76ea634d59c487aaca35bb4e22816c83d73b9895d0445b56293"
 lock-version = "1.0"
 python-versions = "^3.8"
 
@@ -1144,6 +1160,9 @@ aiohttp = [
     {file = "aiohttp-3.6.2-cp37-cp37m-win_amd64.whl", hash = "sha256:32e5f3b7e511aa850829fbe5aa32eb455e5534eaa4b1ce93231d00e2f76e5654"},
     {file = "aiohttp-3.6.2-py3-none-any.whl", hash = "sha256:460bd4237d2dbecc3b5ed57e122992f60188afe46e7319116da5eb8a9dfedba4"},
     {file = "aiohttp-3.6.2.tar.gz", hash = "sha256:259ab809ff0727d0e834ac5e8a283dc5e3e0ecc30c4d80b3cd17a4139ce1f326"},
+]
+aiologger = [
+    {file = "aiologger-0.6.0.tar.gz", hash = "sha256:8dab61c4704ffac9cdf515695bcf95b866af0a4dc27c5f336fd4230631c5036c"},
 ]
 aiotinydb = [
     {file = "aiotinydb-1.2.2-py3-none-any.whl", hash = "sha256:118078cf2a29e3d4055a48254fd0578540c15035ad5f06183c8894f30ae16721"},

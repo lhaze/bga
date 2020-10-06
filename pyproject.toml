@@ -31,6 +31,7 @@ httpx = "^0.14.3"
 rich = "^7.1.0"
 asyncblink = "^0.3.2"
 aiotinydb = "^1.2.2"
+aiologger = {extras = ["aiofiles"], version = "^0.6.0"}
 
 [tool.poetry.dev-dependencies]
 pip = "~20.1.1"

@@ -1,16 +1,15 @@
 import asyncio
 import datetime
-from time import process_time
 import typing as t
 
 import click
-from rich import print as rprint
 
 from common.debugging import (
     interactive_stop,
     post_mortem,
 )
 from common.measures import Timer
+from .logging import setup_json_files_logging, setup_print_logging
 from .process import (
     get_spiders,
     process_signals,
@@ -19,7 +18,7 @@ from .process import (
 )
 
 
-async def async_main(spiders: t.Sequence[Spider], process_state: ProcessState):
+async def async_main(spiders: t.Set[Spider], process_state: ProcessState):
     awaitables = (spider.run() for spider in spiders)
     try:
         await asyncio.gather(
@@ -29,8 +28,14 @@ async def async_main(spiders: t.Sequence[Spider], process_state: ProcessState):
         process_signals.error.send(process_state, error=e)
 
 
+def _setup_logging(process_state: ProcessState) -> None:
+    setup_json_files_logging(process_state)
+    setup_print_logging()
+
+
 def scraper(interactive: bool):
     ps = ProcessState(start=datetime.datetime.now(), interval=datetime.timedelta(hours=24))
+    _setup_logging(ps)
     spiders = get_spiders(ps)
     process_signals.started.send(ps, spiders=spiders)
     interactive_stop(interactive, "process starting", locals())
@@ -38,7 +43,7 @@ def scraper(interactive: bool):
         if spiders:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(async_main(spiders, ps))
-    process_signals.finished.send(ps, spiders=spiders, timer=timer.serialize())
+    process_signals.finished.send(ps, spiders=spiders, timer=timer)
     interactive_stop(interactive, "process finished", locals())
 
 

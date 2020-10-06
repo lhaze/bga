@@ -12,7 +12,7 @@ import typing as t
 
 from pca.data.descriptors import reify
 
-from .page import PageFragment
+from .page import PageModel
 from .fetching import Response
 
 
@@ -28,9 +28,14 @@ class ProcessState:
     timeout=20)
     """
 
+    name: str = "process"
     start: datetime = field(default_factory=datetime.now)
     interval: timedelta = timedelta(minutes=15)
     timeout: int = 3600  # in seconds
+
+    @reify
+    def start_as_filename(self) -> str:
+        return self.start.strftime("%Y-%m-%d-%H-%M-%S")
 
     @reify
     def start_date(self) -> date:
@@ -140,9 +145,9 @@ class SpiderConfig:
     start_urls: t.Optional[t.List[str]] = None
     is_active: bool = True
 
-    start_model: t.Optional[t.Type[PageFragment]] = None
-    catalogue_model: t.Optional[t.Type[PageFragment]] = None
-    details_model: t.Optional[t.Type[PageFragment]] = None
+    start_model: t.Type[PageModel] = None  # type: ignore
+    catalogue_model: t.Type[PageModel] = None  # type: ignore
+    details_model: t.Optional[t.Type[PageModel]] = None
 
     concurrency_policy: ConcurrencyPolicy = ConcurrencyPolicy()
     request_policy: RequestPolicy = RequestPolicy()

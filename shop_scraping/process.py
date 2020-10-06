@@ -1,10 +1,8 @@
 import asyncio
-from asyncio import Task
-from os import name
 import typing as t
 
-from httpx import AsyncClient
 import httpx
+from pca.data.descriptors import reify
 
 from common.measures import Timer
 from common.urls import Url
@@ -20,15 +18,19 @@ class Spider:
         self.config = config
         self.process_state = process_state
         self._semaphore = asyncio.Semaphore(config.concurrency_policy.task_limit)
-        self._client = AsyncClient(**config.request_policy.client_kwargs)
+        self._client = httpx.AsyncClient(**config.request_policy.client_kwargs)
         self._urls_processed: t.MutableSet[Url] = set()
         self._urls_failed: t.MutableSet[Url] = set()
         self._urls_invalid: t.MutableSet[Url] = set()
-        self._tasks: t.MutableSet[Task] = set()
+        self._tasks: t.MutableSet[asyncio.Task] = set()
         process_signals.spider_registered.send(self)
 
+    @reify
+    def name(self):
+        return self.config.name
+
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} {self.config.name} {id(self)}>"
+        return f"<{self.__class__.__name__} {self.name} {id(self)}>"
 
     async def run(self):
         process_signals.spider_started.send(self)
@@ -55,32 +57,36 @@ class Spider:
         if response:
             model = model_class(response.text)
             if model.is_valid_response():
-                process_signals.url_responded_valid.send(self, url=url, response=response)
+                process_signals.url_response_valid.send(self, url=url, response=response)
                 self._extract(model)
             else:
                 self._urls_invalid.add(url)
-                process_signals.url_responded_error.send(self, url=url, response=response)
+                process_signals.url_response_invalid.send(self, url=url, response=response)
 
     async def _make_request(self, url) -> t.Optional[httpx.Response]:
         # TODO coordinate between requests and throttle request rate
         await asyncio.sleep(self.config.concurrency_policy.request_delay)
-        response = None
-        for _ in range(self.config.concurrency_policy.url_retries):
-            with Timer() as t:
+        response = timer = None
+        for _ in range(tries := self.config.concurrency_policy.url_retries):
+            with Timer() as timer:
                 # TODO be resilent to 4xx & 5xx responses
                 response = await bound_fetch(self._semaphore, url, self._client)
                 if response.status_code < 400:
-                    process_signals.url_ok.send(self, url=url, response=response, timer=t.serialize())
+                    process_signals.url_fetched.send(self, url=url, response=response, timer=timer)
                     return response
+                else:
+                    process_signals.url_error.send(self, url=url, response=response, timer=timer)
         self._urls_failed.add(url)
-        process_signals.url_failed.send(self, url=url, response=response, timer=t.serialize())
+        process_signals.url_failed.send(self, url=url, response=response, tries=tries)
         return None
 
     def _extract(self, model: PageModel):
-        self._create_tasks(urls=model.catalogue_urls, model_class=self.config.catalogue_model)
-        self._create_tasks(urls=model.details_urls, model_class=self.config.details_model)
+        if catalogue_model := self.config.catalogue_model:
+            self._create_tasks(urls=model.catalogue_urls, model_class=catalogue_model)
+        if details_model := self.config.details_model:
+            self._create_tasks(urls=model.details_urls, model_class=details_model)
         if extracted_items := model.extracted:
-            process_signals.items_extracted(self, items=extracted_items)
+            process_signals.items_extracted.send(self, items=extracted_items)
 
 
 def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
@@ -89,6 +95,6 @@ def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
     return [config for config in shops_meta.CONFIGS if config.should_start(process_state)]
 
 
-def get_spiders(process_state: ProcessState) -> t.List[Spider]:
+def get_spiders(process_state: ProcessState) -> t.Set[Spider]:
     configs = get_active_configs(process_state)
     return [Spider(config=config, process_state=process_state) for config in configs]
