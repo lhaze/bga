@@ -19,13 +19,18 @@ def serialize_value(obj: t.Any) -> t.Union[str, t.List[str], t.Dict[str, str], t
 
 
 @serialize_value.register
+def _serialize_task(obj: Exception) -> str:
+    return repr(obj)
+
+
+@serialize_value.register
 def _serialize_task(obj: asyncio.Task) -> str:
     return obj.get_name()
 
 
 @serialize_value.register
 def _serialize_process_state(obj: ProcessState) -> str:
-    return f"{obj.name} {obj.start_date_iso})"
+    return f"{obj.name} {obj.start.isoformat()}"
 
 
 @serialize_value.register(set)

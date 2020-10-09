@@ -1,5 +1,6 @@
 import asyncio
 import typing as t
+import aiologger
 
 import httpx
 from pca.data.descriptors import reify
@@ -33,6 +34,7 @@ class Spider:
         return f"<{self.__class__.__name__} {self.name} {id(self)}>"
 
     async def run(self):
+        # raise asyncio.CancelledError()
         process_signals.spider_started.send(self)
         self._create_tasks(urls=self.config.start_urls, model_class=self.config.start_model)
         while len(self._tasks):
