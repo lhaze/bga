@@ -3,7 +3,7 @@ import click
 import pprint
 import typing as t
 
-from httpx import AsyncClient
+from pca.utils.imports import import_dotted_path
 from rich import print as rprint
 
 from common.debugging import (
@@ -11,8 +11,6 @@ from common.debugging import (
     post_mortem,
 )
 from common.urls import Url
-from pca.utils.imports import import_dotted_path
-
 from .page import PageFragment
 from .fetching import fetch, Response
 
@@ -36,11 +34,10 @@ request_kwargs = dict(
 
 
 async def async_main(url: Url):
-    async with AsyncClient() as client:
-        response: Response = await asyncio.wait_for(
-            fetch(url, client, request_kwargs),
-            timeout=10,
-        )
+    response: Response = await asyncio.wait_for(
+        fetch(url, request_kwargs=request_kwargs),
+        timeout=10,
+    )
     return response
 
 
@@ -51,8 +48,7 @@ def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool):
     model: PageFragment = model_class(response.text)
     serialized: str = pprint.pformat(model.to_dict())
     rprint("[yellow]Result:", serialized)
-    if interactive:
-        interactive_stop("after response", locals())
+    interactive_stop(interactive, "after response", locals())
 
 
 @click.command()

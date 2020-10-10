@@ -68,6 +68,7 @@ class RequestPolicy:
     user_agent: str = "python/requests"
     timeout: int = 5
     is_valid: t.Optional[t.Callable[[Response], bool]] = None
+    request_kwargs: dict = field(default_factory=dict)
 
     @property
     def headers(self) -> t.Dict[str, str]:

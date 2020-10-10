@@ -19,7 +19,6 @@ class Spider:
         self.config = config
         self.process_state = process_state
         self._semaphore = asyncio.Semaphore(config.concurrency_policy.task_limit)
-        self._client = httpx.AsyncClient(**config.request_policy.client_kwargs)
         self._urls_processed: t.MutableSet[Url] = set()
         self._urls_failed: t.MutableSet[Url] = set()
         self._urls_invalid: t.MutableSet[Url] = set()
@@ -72,7 +71,12 @@ class Spider:
         for _ in range(tries := self.config.concurrency_policy.url_retries):
             with Timer() as timer:
                 # TODO be resilent to 4xx & 5xx responses
-                response = await bound_fetch(self._semaphore, url, self._client)
+                response = await bound_fetch(
+                    semaphore=self._semaphore,
+                    url=url,
+                    client_kwargs=self.config.request_policy.client_kwargs,
+                    request_kwargs=self.config.request_policy.request_kwargs,
+                )
                 if response.status_code < 400:
                     process_signals.url_fetched.send(self, url=url, response=response, timer=timer)
                     return response
