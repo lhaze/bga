@@ -18,15 +18,6 @@ from .fetching import Response
 
 @dataclass
 class ProcessState:
-    """
-    State of the process run.
-
-    >>> ProcessState()
-    ProcessState(start=datetime.datetime(...), interval=datetime.timedelta(seconds=900), timeout=3600)
-    >>> ProcessState(start=datetime(2019, 8, 14, 12, 50, 32), interval=timedelta(minutes=30), timeout=20)
-    ProcessState(start=datetime.datetime(2019, 8, 14, 12, 50, 32), interval=datetime.timedelta(seconds=1800),
-    timeout=20)
-    """
 
     name: str = "process"
     start: datetime = field(default_factory=datetime.now)
@@ -111,9 +102,23 @@ class SpiderConfig:
      'start_model': 'start_model',
      'catalogue_model': 'catalogue_model',
      'details_model': 'details_model',
-     'concurrency_policy': {'task_limit': 3, 'request_delay': 0.5, 'url_retries': 2, 'retry_delay': 0.5},
-     'request_policy': {'user_agent': 'python/requests', 'timeout': 5, 'is_valid': None},
-     'schedule_policy': {'expected_start': datetime.time(0, 0)}}
+     'concurrency_policy': {
+        'task_check_interval': 5,
+        'task_limit': 3,
+        'request_delay': 0.5,
+        'url_retries': 2,
+        'retry_delay': 0.5
+     },
+     'request_policy': {
+        'user_agent': 'python/requests',
+        'timeout': 5,
+        'is_valid': None,
+        'request_kwargs': {}
+     },
+     'schedule_policy': {
+        'expected_start': datetime.time(0, 0)
+     }
+    }
     >>> SpiderConfig(
     ...     name='name',
     ...     domain='domain'

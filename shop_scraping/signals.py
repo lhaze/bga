@@ -1,5 +1,6 @@
 import asyncblink
 from blinker.base import Signal
+from pca.utils.collections import Bunch
 
 
 class NamedNamespace(asyncblink.Namespace):
@@ -14,18 +15,26 @@ class NamedNamespace(asyncblink.Namespace):
         return super().__getitem__(f"{self.name}:{key}")
 
 
-process_signals = NamedNamespace("process")
-process_signals.started = process_signals.signal("started")
-process_signals.spider_registered = process_signals.signal("spider_registered")
-process_signals.spider_started = process_signals.signal("spider_started")
-process_signals.spider_ticked = process_signals.signal("spider_ticked")
-process_signals.url_registered = process_signals.signal("url_registered")
-process_signals.url_processed = process_signals.signal("url_processed")
-process_signals.url_fetched = process_signals.signal("url_fetched")
-process_signals.url_failed = process_signals.signal("url_failed")
-process_signals.url_response_valid = process_signals.signal("url_response_valid")
-process_signals.url_response_invalid = process_signals.signal("url_response_invalid")
-process_signals.items_extracted = process_signals.signal("items_extracted")
-process_signals.spider_ended = process_signals.signal("spider_ended")
-process_signals.error = process_signals.signal("error")
-process_signals.finished = process_signals.signal("finished")
+meta_signals = NamedNamespace("meta")
+meta_signals.spider_registered = meta_signals.signal("spider_registered")
+meta_signals.started = meta_signals.signal("started")
+meta_signals.error = meta_signals.signal("error")
+meta_signals.finished = meta_signals.signal("finished")
+
+spider_signals = NamedNamespace("spider")
+spider_signals.spider_started = spider_signals.signal("spider_started")
+spider_signals.spider_ticked = spider_signals.signal("spider_ticked")
+spider_signals.url_registered = spider_signals.signal("url_registered")
+spider_signals.url_processing_started = spider_signals.signal("url_processing_started")
+spider_signals.url_fetching_started = spider_signals.signal("url_fetching_started")
+spider_signals.url_fetched = spider_signals.signal("url_fetched")
+spider_signals.url_error = spider_signals.signal("url_error")
+spider_signals.spider_ended = spider_signals.signal("spider_ended")
+
+output_signals = NamedNamespace("output")
+output_signals.url_failed = output_signals.signal("url_failed")
+output_signals.url_response_valid = output_signals.signal("url_response_valid")
+output_signals.url_response_invalid = output_signals.signal("url_response_invalid")
+output_signals.items_extracted = output_signals.signal("items_extracted")
+
+SIGNALS = Bunch(spider=spider_signals, meta=meta_signals, output=output_signals)

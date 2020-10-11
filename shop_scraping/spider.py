@@ -1,6 +1,5 @@
 import asyncio
 import typing as t
-import aiologger
 
 import httpx
 from pca.data.descriptors import reify
@@ -11,7 +10,7 @@ from common.urls import Url
 from .config import ProcessState, SpiderConfig
 from .fetching import bound_fetch
 from .page import PageModel
-from .signals import process_signals
+from .signals import SIGNALS
 
 
 class Spider:
@@ -23,7 +22,7 @@ class Spider:
         self._urls_failed: t.MutableSet[Url] = set()
         self._urls_invalid: t.MutableSet[Url] = set()
         self._tasks: t.MutableSet[asyncio.Task] = set()
-        process_signals.spider_registered.send(self)
+        SIGNALS.meta.spider_registered.send(self)
 
     @reify
     def name(self):
@@ -33,16 +32,17 @@ class Spider:
         return f"<{self.__class__.__name__} {self.name} {id(self)}>"
 
     async def run(self):
-        # raise asyncio.CancelledError()
-        process_signals.spider_started.send(self)
+        SIGNALS.spider.spider_started.send(self)
         self._create_tasks(urls=self.config.start_urls, model_class=self.config.start_model)
         while len(self._tasks):
             done, pending = await asyncio.wait(
                 self._tasks
             )  # , timeout=self.config.concurrency_policy.task_check_interval)
-            process_signals.spider_ticked.send(self, done=done, pending=pending)
+            SIGNALS.spider.spider_ticked.send(self, done=done, pending=pending)
             self._tasks.difference_update(done)
-        process_signals.spider_ended.send(self)
+        SIGNALS.spider.spider_ended.send(
+            self, urls_failed=self._urls_failed, urls_invalid=self._urls_invalid, urls_total=len(self._urls_processed)
+        )
 
     def _create_tasks(self, urls: t.Sequence[Url], model_class: t.Type[PageModel]) -> None:
         new_urls = set(urls) - self._urls_processed
@@ -50,24 +50,25 @@ class Spider:
             task = asyncio.create_task(self._process_url(url, model_class), name=url)
             self._urls_processed.add(url)
             self._tasks.add(task)
-            process_signals.url_registered.send(self, task=task)
+            SIGNALS.spider.url_registered.send(self, task=task)
 
     async def _process_url(self, url: Url, model_class: t.Type[PageModel]):
-        process_signals.url_processed.send(self, url=url, model_class=model_class)
+        SIGNALS.spider.url_processing_started.send(self, url=url, model_class=model_class)
         response = await self._make_request(url=url)
         if response:
             model = model_class(response.text)
             if model.is_valid_response():
-                process_signals.url_response_valid.send(self, url=url, response=response)
+                SIGNALS.output.url_response_valid.send(self, url=url, response=response)
                 self._extract(model)
             else:
                 self._urls_invalid.add(url)
-                process_signals.url_response_invalid.send(self, url=url, response=response)
+                SIGNALS.output.url_response_invalid.send(self, url=url, response=response)
 
     async def _make_request(self, url) -> t.Optional[httpx.Response]:
         # TODO coordinate between requests and throttle request rate
         await asyncio.sleep(self.config.concurrency_policy.request_delay)
         response = timer = None
+        SIGNALS.spider.url_fetching_started.send(self, url=url)
         for _ in range(tries := self.config.concurrency_policy.url_retries):
             with Timer() as timer:
                 # TODO be resilent to 4xx & 5xx responses
@@ -77,13 +78,13 @@ class Spider:
                     client_kwargs=self.config.request_policy.client_kwargs,
                     request_kwargs=self.config.request_policy.request_kwargs,
                 )
-                if response.status_code < 400:
-                    process_signals.url_fetched.send(self, url=url, response=response, timer=timer)
-                    return response
-                else:
-                    process_signals.url_error.send(self, url=url, response=response, timer=timer)
+            if response.status_code < 400:
+                SIGNALS.spider.url_fetched.send(self, url=url, response=response, timer=timer)
+                return response
+            else:
+                SIGNALS.spider.url_error.send(self, url=url, response=response, timer=timer)
         self._urls_failed.add(url)
-        process_signals.url_failed.send(self, url=url, response=response, tries=tries)
+        SIGNALS.output.url_failed.send(self, url=url, response=response, tries=tries)
         return None
 
     def _extract(self, model: PageModel):
@@ -92,7 +93,7 @@ class Spider:
         if details_model := self.config.details_model:
             self._create_tasks(urls=model.details_urls, model_class=details_model)
         if extracted_items := model.extracted:
-            process_signals.items_extracted.send(self, items=extracted_items)
+            SIGNALS.output.items_extracted.send(self, items=extracted_items)
 
 
 def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
@@ -103,4 +104,4 @@ def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
 
 def get_spiders(process_state: ProcessState) -> t.Set[Spider]:
     configs = get_active_configs(process_state)
-    return [Spider(config=config, process_state=process_state) for config in configs]
+    return {Spider(config=config, process_state=process_state) for config in configs}

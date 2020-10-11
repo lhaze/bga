@@ -14,12 +14,20 @@ def serialize_kwargs(kwargs: t.Dict[str, t.Any]):
 
 
 @singledispatch
-def serialize_value(obj: t.Any) -> t.Union[str, t.List[str], t.Dict[str, str], t.List[t.Dict[str, str]]]:
+def serialize_value(obj: t.Any):
+    """
+    >>> serialize_value('str')
+    'str'
+    """
     return str(obj)
 
 
 @serialize_value.register
-def _serialize_task(obj: Exception) -> str:
+def _serialize_exception(obj: Exception) -> str:
+    """
+    >>> serialize_value(ValueError('str'))
+    "ValueError('str')"
+    """
     return repr(obj)
 
 
@@ -30,22 +38,12 @@ def _serialize_task(obj: asyncio.Task) -> str:
 
 @serialize_value.register
 def _serialize_process_state(obj: ProcessState) -> str:
+    """
+    >>> import datetime
+    >>> serialize_value(ProcessState(start=datetime.datetime(2019, 8, 14, 12, 50, 32)))
+    'process 2019-08-14T12:50:32'
+    """
     return f"{obj.name} {obj.start.isoformat()}"
-
-
-@serialize_value.register(set)
-def _serialize_task_set(obj: t.Set[asyncio.Task]) -> t.List[str]:
-    return [f"<Task {task.get_name()}>" for task in obj]
-
-
-@serialize_value.register(list)
-def _serialize_extracted_items(obj: t.List[t.Dict[str, str]]) -> t.List[t.Dict[str, str]]:
-    return obj
-
-
-@serialize_value.register
-def _serialize_class_instance(obj: type) -> str:
-    return obj.__name__
 
 
 @serialize_value.register(Response)
@@ -56,3 +54,18 @@ def _serialize_response(obj: Response) -> str:
 @serialize_value.register(Timer)
 def _serialize_timer(obj: Timer) -> t.Dict[str, str]:
     return obj.serialize()
+
+
+@serialize_value.register(set)
+@serialize_value.register(list)
+def _serialize_sequence(obj: t.Sequence) -> t.Sequence[t.Any]:
+    """
+    >>> serialize_value({'foo'})
+    ['foo']
+    """
+    return [serialize_value(v) for v in obj]  # type: ignore
+
+
+@serialize_value.register
+def _serialize_class_instance(obj: type) -> str:
+    return obj.__name__
