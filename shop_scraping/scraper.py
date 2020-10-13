@@ -23,9 +23,7 @@ async def async_main(process_state: ProcessState):
             SIGNALS.meta.started.send(process_state, spiders=spiders)
             awaitables = (spider.run() for spider in spiders)
             try:
-                results = await asyncio.gather(
-                    *awaitables
-                )  # asyncio.wait_for(asyncio.gather(*awaitables), timeout=process_state.timeout)
+                results = await asyncio.wait_for(asyncio.gather(*awaitables), timeout=process_state.timeout)
             except (asyncio.TimeoutError, asyncio.CancelledError) as e:
                 SIGNALS.meta.error.send(process_state, error=e)
             else:

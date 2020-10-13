@@ -35,9 +35,7 @@ class Spider:
         SIGNALS.spider.spider_started.send(self)
         self._create_tasks(urls=self.config.start_urls, model_class=self.config.start_model)
         while len(self._tasks):
-            done, pending = await asyncio.wait(
-                self._tasks
-            )  # , timeout=self.config.concurrency_policy.task_check_interval)
+            done, pending = await asyncio.wait(self._tasks, timeout=self.config.concurrency_policy.task_check_interval)
             SIGNALS.spider.spider_ticked.send(self, done=done, pending=pending)
             self._tasks.difference_update(done)
         SIGNALS.spider.spider_ended.send(
