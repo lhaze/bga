@@ -11,6 +11,7 @@ from .page import PageFragment
 
 
 async def fetch(url: Url, client_kwargs: dict = None, request_kwargs: dict = None) -> Response:
+    # TODO HTTP Client cache
     async with AsyncClient(**client_kwargs or {}) as client:
         response = await client.get(url, **request_kwargs or {})
     return response

@@ -41,11 +41,11 @@ async def async_main(url: Url):
     return response
 
 
-def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool):
+def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool, domain: str):
     model_class: t.Type[PageFragment] = import_dotted_path(model_path)
     loop = asyncio.get_event_loop()
     response = loop.run_until_complete(async_main(url))
-    model: PageFragment = model_class(response.text)
+    model: PageFragment = model_class(response.text, domain=domain)
     serialized: str = pprint.pformat(model.to_dict())
     rprint("[yellow]Result:", serialized)
     interactive_stop(interactive, "after response", locals())
@@ -54,6 +54,7 @@ def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool):
 @click.command()
 @click.option("--debug/--no-debug", default=False)
 @click.option("-i", "--interactive", is_flag=True)
+@click.option("-d", "--domain", default="")
 @click.argument("url")
 @click.argument("model_path")
 def command(**kwargs):

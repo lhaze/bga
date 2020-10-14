@@ -22,6 +22,7 @@ class Spider:
         self._urls_failed: t.MutableSet[Url] = set()
         self._urls_invalid: t.MutableSet[Url] = set()
         self._tasks: t.MutableSet[asyncio.Task] = set()
+        self._items_extracted: int = 0
         SIGNALS.meta.spider_registered.send(self)
 
     @reify
@@ -39,7 +40,11 @@ class Spider:
             SIGNALS.spider.spider_ticked.send(self, done=done, pending=pending)
             self._tasks.difference_update(done)
         SIGNALS.spider.spider_ended.send(
-            self, urls_failed=self._urls_failed, urls_invalid=self._urls_invalid, urls_total=len(self._urls_processed)
+            self,
+            urls_failed=self._urls_failed,
+            urls_invalid=self._urls_invalid,
+            urls_total=len(self._urls_processed),
+            items_extracted=self._items_extracted,
         )
 
     def _create_tasks(self, urls: t.Sequence[Url], model_class: t.Type[PageModel]) -> None:
@@ -54,7 +59,7 @@ class Spider:
         SIGNALS.spider.url_processing_started.send(self, url=url, model_class=model_class)
         response = await self._make_request(url=url)
         if response:
-            model = model_class(response.text)
+            model = model_class(response.text, domain=self.config.domain)
             if model.is_valid_response():
                 SIGNALS.output.url_response_valid.send(self, url=url, response=response)
                 self._extract(model)
@@ -92,6 +97,7 @@ class Spider:
             self._create_tasks(urls=model.details_urls, model_class=details_model)
         if extracted_items := model.extracted:
             SIGNALS.output.items_extracted.send(self, items=extracted_items)
+            self._items_extracted += len(extracted_items)
 
 
 def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
