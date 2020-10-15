@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import AsyncExitStack
 import datetime
 
 import click
@@ -7,6 +8,7 @@ from common.debugging import (
     interactive_stop,
     post_mortem,
 )
+from common.files import get_data_filepath
 from common.measures import Timer
 from .logging import LogManager
 from .spider import (
@@ -14,11 +16,16 @@ from .spider import (
     ProcessState,
     SIGNALS,
 )
+from .storage import Storage
 
 
 async def async_main(process_state: ProcessState):
     async with LogManager(process_state):
-        with Timer() as timer:
+        # LogManager is separate from other managers because we want to close the managers
+        # and then log something about them
+        async with AsyncExitStack() as stack:
+            await stack.enter_async_context(timer := Timer())
+            await stack.enter_async_context(Storage(process_state))
             spiders = get_spiders(process_state)
             SIGNALS.meta.started.send(process_state, spiders=spiders)
             awaitables = (spider.run() for spider in spiders)

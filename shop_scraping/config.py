@@ -44,6 +44,10 @@ class ProcessState:
         """
         return self.start_date.isoformat()
 
+    @reify
+    def output_filename(self) -> str:
+        return f"{self.start_as_filename}.output.json"
+
 
 @dataclass
 class ConcurrencyPolicy:
