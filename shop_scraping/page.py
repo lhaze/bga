@@ -231,3 +231,7 @@ class PageModel(PageFragment):
     @property
     def extracted(self) -> t.List[dict]:
         return [value for i in self.items if (value := i.to_dict())]
+
+    @classmethod
+    def url_modifier(cls, url: Url) -> Url:
+        return url

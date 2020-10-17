@@ -23,6 +23,7 @@ class ProcessState:
     start: datetime = field(default_factory=datetime.now)
     interval: timedelta = timedelta(minutes=15)
     timeout: int = 3600  # in seconds
+    spiders_chosen: t.Tuple[str, ...] = ()
 
     @reify
     def start_as_filename(self) -> str:

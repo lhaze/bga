@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import AsyncExitStack
 import datetime
+import typing as t
 
 import click
 
@@ -40,9 +41,9 @@ async def async_main(process_state: ProcessState):
         SIGNALS.meta.finished.send(process_state, spiders=spiders, timer=timer)
 
 
-def scraper(interactive: bool):
+def scraper(interactive: bool, spiders: t.Tuple[str, ...]):
     interactive_stop(interactive, "process starting", locals())
-    ps = ProcessState(interval=datetime.timedelta(hours=24))
+    ps = ProcessState(interval=datetime.timedelta(hours=1), spiders_chosen=spiders)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(async_main(ps))
     interactive_stop(interactive, "process finished", locals())
@@ -51,6 +52,7 @@ def scraper(interactive: bool):
 @click.command()
 @click.option("--debug/--no-debug", default=False)
 @click.option("-i", "--interactive", is_flag=True)
+@click.argument("spiders", nargs=-1, default=None)
 def command(debug: bool, **kwargs):
     if debug:
         post_mortem(scraper)(**kwargs)

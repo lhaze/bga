@@ -48,7 +48,8 @@ class Spider:
         )
 
     def _create_tasks(self, urls: t.Sequence[Url], model_class: t.Type[PageModel]) -> None:
-        new_urls = set(urls) - self._urls_processed
+        processing_urls = set(model_class.url_modifier(u) for u in urls)
+        new_urls = processing_urls - self._urls_processed
         for url in new_urls:
             task = asyncio.create_task(self._process_url(url, model_class), name=url)
             self._urls_processed.add(url)
@@ -100,12 +101,15 @@ class Spider:
             self._items_extracted += len(extracted_items)
 
 
-def get_active_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
+def get_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
     from bgap import shops_meta
 
-    return [config for config in shops_meta.CONFIGS if config.should_start(process_state)]
+    if not process_state.spiders_chosen:
+        return [config for config in shops_meta.CONFIGS if config.should_start(process_state)]
+    else:
+        return [config for config in shops_meta.CONFIGS if config.name in process_state.spiders_chosen]
 
 
 def get_spiders(process_state: ProcessState) -> t.Set[Spider]:
-    configs = get_active_configs(process_state)
+    configs = get_configs(process_state)
     return {Spider(config=config, process_state=process_state) for config in configs}

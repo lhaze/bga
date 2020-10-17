@@ -21,9 +21,9 @@ class LogManager:
     CONSOLE_HANDLER = {"spider": {"level": "DEBUG"}, "meta": {"level": "DEBUG"}, "output": {"level": "DEBUG"}}
     FILE_HANLDERS = {
         "error": {"level": "WARNING", "signals": ["meta", "spider"]},
-        "meta": {"level": "INFO", "signals": ["meta"]},
+        "meta": {"level": "DEBUG", "signals": ["meta"]},
         "output": {"level": "WARNING", "signals": ["output"]},
-        "spider": {"level": "INFO", "signals": ["spider"]},
+        "spider": {"level": "DEBUG", "signals": ["spider"]},
     }
     SIGNAL_TO_LEVEL: t.Dict[str, str] = {
         "meta:spider_registered": "DEBUG",
