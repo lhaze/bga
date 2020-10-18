@@ -23,6 +23,7 @@ class ProcessState:
     start: datetime = field(default_factory=datetime.now)
     interval: timedelta = timedelta(minutes=15)
     timeout: int = 3600  # in seconds
+    is_scheduler_on: bool = False
     spiders_chosen: t.Tuple[str, ...] = ()
 
     @reify
@@ -86,69 +87,6 @@ class SchedulePolicy:
 
 @dataclass
 class SpiderConfig:
-    """
-    >>> from dataclasses import asdict
-    >>> sc = SpiderConfig(  # full setup
-    ...     name='name',
-    ...     domain='domain',
-    ...     allowed_domains=['allowed'],
-    ...     start_urls=['start_urls'],
-    ...     is_active=True,
-    ...     start_model='start_model',
-    ...     catalogue_model='catalogue_model',
-    ...     details_model='details_model',
-    ... )
-    >>> asdict(sc)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-    {'name': 'name',
-     'domain': 'domain',
-     'allowed_domains': ['allowed'],
-     'start_urls': ['start_urls'],
-     'is_active': True,
-     'start_model': 'start_model',
-     'catalogue_model': 'catalogue_model',
-     'details_model': 'details_model',
-     'concurrency_policy': {
-        'task_check_interval': 5,
-        'task_limit': 3,
-        'request_delay': 0.5,
-        'url_retries': 2,
-        'retry_delay': 0.5
-     },
-     'request_policy': {
-        'user_agent': 'python/requests',
-        'timeout': 5,
-        'is_valid': None,
-        'request_kwargs': {}
-     },
-     'schedule_policy': {
-        'expected_start': datetime.time(0, 0)
-     }
-    }
-    >>> SpiderConfig(
-    ...     name='name',
-    ...     domain='domain'
-    ... )  # minimal model setup checked
-    Traceback (most recent call last):
-     ...
-    AssertionError: One of models - either `start_model` or `catalogue_model` - is needed
-    >>> sc = SpiderConfig(
-    ...     name='name',
-    ...     domain='domain',
-    ...     start_model='start_model'
-    ... )  # minimal setup
-    >>> asdict(sc)
-    {'name': 'name',
-     'domain': 'domain',
-     'allowed_domains': {'domain'},
-     'start_urls': ['domain'],
-     'is_active': True,
-     'start_model': 'start_model',
-     'catalogue_model': None,
-     'details_model': None,
-     'concurrency_policy': {'task_limit': 3, 'request_delay': 0.5, 'url_retries': 2, 'retry_delay': 0.5},
-     'request_policy': {'user_agent': 'python/requests', 'timeout': 5, 'is_valid': None},
-     'schedule_policy': {'expected_start': datetime.time(0, 0)}}
-    """
 
     name: str
     domain: str

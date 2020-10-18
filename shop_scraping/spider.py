@@ -104,7 +104,7 @@ class Spider:
 def get_configs(process_state: ProcessState) -> t.List[SpiderConfig]:
     from bgap import shops_meta
 
-    if not process_state.spiders_chosen:
+    if process_state.is_scheduler_on:
         return [config for config in shops_meta.CONFIGS if config.should_start(process_state)]
     else:
         return [config for config in shops_meta.CONFIGS if config.name in process_state.spiders_chosen]
