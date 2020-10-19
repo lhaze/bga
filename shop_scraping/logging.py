@@ -18,7 +18,7 @@ from .signals import SIGNALS
 
 class LogManager:
 
-    CONSOLE_HANDLER = {"spider": {"level": "DEBUG"}, "meta": {"level": "DEBUG"}, "output": {"level": "DEBUG"}}
+    CONSOLE_HANDLER = {"spider": {"level": "INFO"}, "meta": {"level": "INFO"}, "output": {"level": "INFO"}}
     FILE_HANLDERS = {
         "error": {"level": "WARNING", "signals": ["meta", "spider"]},
         "meta": {"level": "DEBUG", "signals": ["meta"]},
@@ -30,7 +30,7 @@ class LogManager:
         "meta:started": "INFO",
         "meta:error": "ERROR",
         "meta:finished": "INFO",
-        "output:items_extracted": "INFO",
+        "output:items_extracted": "DEBUG",
         "output:url_failed": "WARNING",
         "output:url_response_valid": "INFO",
         "output:url_response_invalid": "WARNING",

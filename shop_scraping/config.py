@@ -23,6 +23,7 @@ class ProcessState:
     start: datetime = field(default_factory=datetime.now)
     interval: timedelta = timedelta(minutes=15)
     timeout: int = 3600  # in seconds
+    slow_task_duration = 2.5  # in seconds
     is_scheduler_on: bool = False
     spiders_chosen: t.Tuple[str, ...] = ()
 

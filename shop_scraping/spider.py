@@ -21,7 +21,8 @@ class Spider:
         self._urls_processed: t.MutableSet[Url] = set()
         self._urls_failed: t.MutableSet[Url] = set()
         self._urls_invalid: t.MutableSet[Url] = set()
-        self._tasks: t.MutableSet[asyncio.Task] = set()
+        self._tasks_pending: t.MutableSet[asyncio.Task] = set()
+        self._tasks_done: t.MutableSet[asyncio.Task] = set()
         self._items_extracted: int = 0
         SIGNALS.meta.spider_registered.send(self)
 
@@ -35,16 +36,22 @@ class Spider:
     async def run(self):
         SIGNALS.spider.spider_started.send(self)
         self._create_tasks(urls=self.config.start_urls, model_class=self.config.start_model)
-        while len(self._tasks):
-            done, pending = await asyncio.wait(self._tasks, timeout=self.config.concurrency_policy.task_check_interval)
+        while len(self._tasks_pending):
+            done, pending = await asyncio.wait(
+                self._tasks_pending, timeout=self.config.concurrency_policy.task_check_interval
+            )
             SIGNALS.spider.spider_ticked.send(self, done=done, pending=pending)
-            self._tasks.difference_update(done)
+            self._tasks_pending.difference_update(done)
+            self._tasks_done.update(done)
+        results = await asyncio.gather(*self._tasks_done, return_exceptions=True)
+        errors = [result for result in results if isinstance(result, Exception)]
         SIGNALS.spider.spider_ended.send(
             self,
             urls_failed=self._urls_failed,
             urls_invalid=self._urls_invalid,
             urls_total=len(self._urls_processed),
             items_extracted=self._items_extracted,
+            errors=errors,
         )
 
     def _create_tasks(self, urls: t.Sequence[Url], model_class: t.Type[PageModel]) -> None:
@@ -53,7 +60,7 @@ class Spider:
         for url in new_urls:
             task = asyncio.create_task(self._process_url(url, model_class), name=url)
             self._urls_processed.add(url)
-            self._tasks.add(task)
+            self._tasks_pending.add(task)
             SIGNALS.spider.url_registered.send(self, task=task)
 
     async def _process_url(self, url: Url, model_class: t.Type[PageModel]):
@@ -76,17 +83,22 @@ class Spider:
         for _ in range(tries := self.config.concurrency_policy.url_retries):
             with Timer() as timer:
                 # TODO be resilent to 4xx & 5xx responses
-                response = await bound_fetch(
-                    semaphore=self._semaphore,
-                    url=url,
-                    client_kwargs=self.config.request_policy.client_kwargs,
-                    request_kwargs=self.config.request_policy.request_kwargs,
-                )
-            if response.status_code < 400:
-                SIGNALS.spider.url_fetched.send(self, url=url, response=response, timer=timer)
-                return response
-            else:
-                SIGNALS.spider.url_error.send(self, url=url, response=response, timer=timer)
+                try:
+                    response = await bound_fetch(
+                        semaphore=self._semaphore,
+                        url=url,
+                        client_kwargs=self.config.request_policy.client_kwargs,
+                        request_kwargs=self.config.request_policy.request_kwargs,
+                    )
+                except httpx.RequestError as e:
+                    response = None
+                    SIGNALS.spider.url_error.send(self, url=url, error=e, timer=timer)
+                else:
+                    if response and response.status_code < 400:
+                        SIGNALS.spider.url_fetched.send(self, url=url, response=response, timer=timer)
+                        return response
+                    else:
+                        SIGNALS.spider.url_error.send(self, url=url, response=response, timer=timer)
         self._urls_failed.add(url)
         SIGNALS.output.url_failed.send(self, url=url, response=response, tries=tries)
         return None
