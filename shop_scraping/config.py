@@ -12,6 +12,7 @@ import typing as t
 
 from pca.data.descriptors import reify
 
+from common.urls import Url
 from .page import PageModel
 from .fetching import Response
 
@@ -90,9 +91,9 @@ class SchedulePolicy:
 class SpiderConfig:
 
     name: str
-    domain: str
-    allowed_domains: t.Optional[t.Set[str]] = None
-    start_urls: t.Optional[t.List[str]] = None
+    domain: Url
+    allowed_domains: t.Optional[t.Set[Url]] = None
+    start_urls: t.Optional[t.List[Url]] = None
     is_active: bool = True
 
     start_model: t.Type[PageModel] = None  # type: ignore

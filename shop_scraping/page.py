@@ -1,7 +1,9 @@
+import dataclasses
 import typing as t
 from inspect import isawaitable
 
 from parsel import Selector, SelectorList
+from pca.data.descriptors import reify
 
 from common.exceptions import BgaException
 from common.urls import Url
@@ -17,12 +19,15 @@ class IgnoreThisItem(BgaException):
     pass
 
 
+@dataclasses.dataclass
+class PageMetadata:
+    """Describes data about the page, passed from the spider task, other than the HTML itself."""
+
+    url: Url
+    domain: Url
+
+
 class Field:
-
-    _clean: CleanFunction
-    model: t.Type["PageFragment"]
-    many: bool
-
     def __init__(
         self,
         *,
@@ -40,10 +45,12 @@ class Field:
             self._clean = clean
         elif model and many:
             self._clean = lambda page_fragment, selector_list: [
-                model(selector=v, **page_fragment._kwargs) for v in selector_list
+                model(selector=v, metadata=page_fragment.metadata) for v in selector_list
             ]
         elif model:
-            self._clean = lambda page_fragment, selector_list: model(selector=selector_list[0], **page_fragment._kwargs)
+            self._clean = lambda page_fragment, selector_list: model(
+                selector=selector_list[0], metadata=page_fragment.metadata
+            )
         elif many:
             self._clean = lambda _, selector_list: selector_list.getall()
         else:
@@ -105,7 +112,7 @@ class XPath(Field):
         super(XPath, self).__init__(**kwargs)
 
     def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
-        return page_fragment._selector.xpath(self.xpath)
+        return page_fragment.selector.xpath(self.xpath)
 
 
 class Css(Field):
@@ -114,7 +121,7 @@ class Css(Field):
         super(Css, self).__init__(**kwargs)
 
     def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
-        return page_fragment._selector.css(self.css_selector)
+        return page_fragment.selector.css(self.css_selector)
 
 
 class Re(Field):
@@ -128,7 +135,7 @@ class Re(Field):
         super(Re, self).__init__(clean=clean, many=many, **kwargs)
 
     def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
-        return page_fragment._selector.re(self.regex)
+        return page_fragment.selector.re(self.regex)
 
 
 class PageFragment:
@@ -187,14 +194,13 @@ class PageFragment:
         text: str = None,
         selector: Selector = None,
         fields: t.Mapping[str, Field] = None,
-        **kwargs,
+        metadata: PageMetadata = None,
     ):
         self.html = text
-        self._selector = selector or Selector(text=text)
-        self._kwargs = kwargs
+        self.selector = selector or Selector(text=text)
+        self.metadata = metadata
         if fields:
             self._fields = {**self._fields, **fields}
-        self.__dict__.update(kwargs)
 
     def __init_subclass__(cls):
         super().__init_subclass__()
@@ -216,8 +222,8 @@ class PageFragment:
             self.to_be_ignored = True
 
     def __repr__(self):
-        data = repr(self._selector.get()[:40])
-        return f"<{self.__class__.__name__} xpath={self._selector._expr} data={data}>"
+        data = repr(self.selector.get()[:40])
+        return f"<{self.__class__.__name__} xpath={self.selector._expr} data={data}>"
 
 
 class PageModel(PageFragment):
@@ -228,7 +234,7 @@ class PageModel(PageFragment):
     def is_valid_response(self) -> bool:
         return True
 
-    @property
+    @reify
     def extracted(self) -> t.List[dict]:
         return [value for i in self.items if (value := i.to_dict())]
 

@@ -18,7 +18,7 @@ def get_url(current_href: str, relative: str) -> Url:
 
 
 def clean_url(page_fragment, selector_list) -> Url:
-    return get_url(page_fragment.domain, selector_list.get())
+    return get_url(page_fragment.metadata.domain, selector_list.get())
 
 
 def get_host_from_url(url: Url):

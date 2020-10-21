@@ -11,7 +11,7 @@ from common.debugging import (
     post_mortem,
 )
 from common.urls import Url
-from .page import PageFragment
+from .page import PageFragment, PageMetadata
 from .fetching import fetch, Response
 
 
@@ -41,11 +41,11 @@ async def async_main(url: Url):
     return response
 
 
-def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool, domain: str):
+def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool, domain: Url):
     model_class: t.Type[PageFragment] = import_dotted_path(model_path)
     loop = asyncio.get_event_loop()
     response = loop.run_until_complete(async_main(url))
-    model: PageFragment = model_class(response.text, domain=domain)
+    model: PageFragment = model_class(response.text, metadata=PageMetadata(url=url, domain=domain))
     serialized: str = pprint.pformat(model.to_dict())
     rprint("[yellow]Result:", serialized)
     interactive_stop(interactive, "after response", locals())

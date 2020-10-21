@@ -9,7 +9,7 @@ from common.urls import Url
 
 from .config import ProcessState, SpiderConfig
 from .fetching import bound_fetch
-from .page import PageModel
+from .page import PageModel, PageMetadata
 from .signals import SIGNALS
 
 
@@ -67,7 +67,7 @@ class Spider:
         SIGNALS.spider.url_processing_started.send(self, url=url, model_class=model_class)
         response = await self._make_request(url=url)
         if response:
-            model = model_class(response.text, domain=self.config.domain)
+            model = model_class(response.text, metadata=self._get_page_metadata(url))
             if model.is_valid_response():
                 SIGNALS.output.url_response_valid.send(self, url=url, response=response)
                 self._extract(model)
@@ -102,6 +102,9 @@ class Spider:
         self._urls_failed.add(url)
         SIGNALS.output.url_failed.send(self, url=url, response=response, tries=tries)
         return None
+
+    def _get_page_metadata(self, url: Url) -> PageMetadata:
+        return PageMetadata(url=url, domain=self.config.domain)
 
     def _extract(self, model: PageModel):
         if catalogue_model := self.config.catalogue_model:
