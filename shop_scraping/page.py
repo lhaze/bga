@@ -109,7 +109,7 @@ class Field:
 class XPath(Field):
     def __init__(self, xpath: str, **kwargs):
         self.xpath = xpath
-        super(XPath, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
         return page_fragment.selector.xpath(self.xpath)
@@ -118,7 +118,7 @@ class XPath(Field):
 class Css(Field):
     def __init__(self, css_selector: str, **kwargs):
         self.css_selector = css_selector
-        super(Css, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
         return page_fragment.selector.css(self.css_selector)
@@ -132,10 +132,34 @@ class Re(Field):
                 clean = lambda _, selected: selected
             else:
                 clean = lambda _, selected: selected[0] if selected else None
-        super(Re, self).__init__(clean=clean, many=many, **kwargs)
+        super().__init__(clean=clean, many=many, **kwargs)
 
     def _get_selector(self, page_fragment: "PageFragment") -> SelectorList:
         return page_fragment.selector.re(self.regex)
+
+
+class Metadata(Field):
+    def __init__(self, attr: str, clean: t.Optional[t.Callable[[Value], Value]] = None, name: str = None):
+        self.model = None
+        self.many = False
+        self.attr = attr
+        self.name = name
+        self._clean = clean if clean else lambda value: value
+
+    def _get_value(self, page_fragment: "PageFragment") -> ValueOrModel:
+        value = getattr(page_fragment.metadata, self.attr, None)
+        return self._clean(value)
+
+
+class Noop(Field):
+    def __init__(self, clean: t.Optional[t.Callable[[Value], Value]] = None, name: str = None):
+        self.model = None
+        self.many = False
+        self.name = name
+        self._clean = clean if clean else lambda value: value
+
+    def _get_value(self, page_fragment: "PageFragment") -> ValueOrModel:
+        return self._clean(page_fragment, page_fragment.selector)
 
 
 class PageFragment:
