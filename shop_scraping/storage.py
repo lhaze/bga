@@ -8,8 +8,8 @@ from .spider import Spider
 
 class Storage(AIOTinyDB):
     def __init__(self, process_state: ProcessState) -> None:
-        self._filename = process_state.output_filename
-        filepath = get_data_filepath(process_state.output_filename)
+        self._filename = process_state.output_filepath
+        filepath = get_data_filepath(process_state.output_filepath)
         super().__init__(filename=filepath)
 
     async def __aenter__(self) -> None:

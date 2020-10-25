@@ -49,8 +49,8 @@ class ProcessState:
         return self.start_date.isoformat()
 
     @reify
-    def output_filename(self) -> str:
-        return f"{self.start_as_filename}.output.json"
+    def output_filepath(self) -> str:
+        return f"shop_scraping/{self.start_as_filename}.output.json"
 
 
 @dataclass

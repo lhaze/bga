@@ -27,3 +27,12 @@ def get_host_from_url(url: Url):
     'www.iana.org'
     """
     return urllib_parse.urlparse(url).hostname
+
+
+def filter_urls(page_fragment, selector_list) -> t.List[Url]:
+    """
+    >>> filter_urls(['#', '/path/to/sth', 'https://www.iana.org/domains/reserved'])
+    ['/path/to/sth', 'https://www.iana.org/domains/reserved']
+    """
+    urls = selector_list.getall()
+    return [url for url in urls if not url.startswith("#")]
