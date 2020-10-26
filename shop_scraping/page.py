@@ -35,9 +35,11 @@ class Field:
         model: t.Type["PageFragment"] = None,
         many: bool = False,
         name: str = None,
+        excluded: bool = False,
     ):
         self.model = model
         self.many = many
+        self.excluded = excluded
         if name:
             self.name = name
 
@@ -139,11 +141,19 @@ class Re(Field):
 
 
 class Metadata(Field):
-    def __init__(self, attr: str, clean: t.Optional[t.Callable[[Value], Value]] = None, name: str = None):
+    def __init__(
+        self,
+        attr: str,
+        *,
+        clean: t.Optional[t.Callable[[Value], Value]] = None,
+        name: str = None,
+        excluded: bool = False,
+    ):
         self.model = None
         self.many = False
         self.attr = attr
         self.name = name
+        self.excluded = excluded
         self._clean = clean if clean else lambda value: value
 
     def _get_value(self, page_fragment: "PageFragment") -> ValueOrModel:
@@ -152,10 +162,11 @@ class Metadata(Field):
 
 
 class Noop(Field):
-    def __init__(self, clean: t.Optional[t.Callable[[Value], Value]] = None, name: str = None):
+    def __init__(self, clean: t.Optional[t.Callable[[Value], Value]] = None, name: str = None, excluded: bool = False):
         self.model = None
         self.many = False
         self.name = name
+        self.excluded = excluded
         self._clean = clean if clean else lambda value: value
 
     def _get_value(self, page_fragment: "PageFragment") -> ValueOrModel:
@@ -228,7 +239,7 @@ class PageFragment:
 
     def __init_subclass__(cls):
         super().__init_subclass__()
-        cls._fields = {k: v for k, v in cls.__dict__.items() if isinstance(v, Field)}
+        cls._fields = {k: v for k, v in cls.__dict__.items() if isinstance(v, Field) and not v.excluded}
 
     def get_field(self, name):
         return self._fields[name]
