@@ -29,10 +29,15 @@ def get_host_from_url(url: Url):
     return urllib_parse.urlparse(url).hostname
 
 
-def filter_urls(page_fragment, selector_list) -> t.List[Url]:
+def get_domain(url: Url) -> Url:
     """
-    >>> filter_urls(['#', '/path/to/sth', 'https://www.iana.org/domains/reserved'])
-    ['/path/to/sth', 'https://www.iana.org/domains/reserved']
+    >>> get_domain(Url('https://www.iana.org/domains/reserved'))
+    'https://www.iana.org'
     """
+    p = urllib_parse.urlparse(url)
+    return Url(f"{p.scheme}://{p.netloc}")
+
+
+def clean_filter_urls(page_fragment, selector_list) -> t.List[Url]:
     urls = selector_list.getall()
     return [url for url in urls if not url.startswith("#")]

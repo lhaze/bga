@@ -10,7 +10,7 @@ from common.debugging import (
     interactive_stop,
     post_mortem,
 )
-from common.urls import Url
+from common.urls import Url, get_domain
 from .page import PageFragment, PageMetadata
 from .fetching import fetch, Response
 
@@ -42,6 +42,7 @@ async def async_main(url: Url):
 
 
 def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool, domain: Url):
+    domain = domain or get_domain(url)
     model_class: t.Type[PageFragment] = import_dotted_path(model_path)
     loop = asyncio.get_event_loop()
     response = loop.run_until_complete(async_main(url))
@@ -55,8 +56,8 @@ def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool, do
 @click.option("--debug/--no-debug", default=False)
 @click.option("-i", "--interactive", is_flag=True)
 @click.option("-d", "--domain", default="")
-@click.argument("url")
 @click.argument("model_path")
+@click.argument("url")
 def command(**kwargs):
     if kwargs["debug"]:
         post_mortem(bga_url_tester)(**kwargs)
