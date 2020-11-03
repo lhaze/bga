@@ -10,6 +10,11 @@ def find_strip(strings: t.Sequence[str]) -> str:
     return next((s for s in (s.strip() for s in strings) if s), "")
 
 
+def clean_split_n_strip(self, selector_list) -> str:
+    lines = (selector_list.get() or "").splitlines()
+    return " ".join(line.strip() for line in lines)
+
+
 def clean_money(page_fragment, selector_list) -> t.Optional[t.Dict[str, str]]:
     return text_to_money(selector_list.get())
 
@@ -47,5 +52,5 @@ def find_path_in_css(string: str) -> str:
 
 
 def clean_all_text(page_fragment, selector_list) -> str:
-    fragments = [selector.root.text_content() for selector in selector_list]
-    return "\n".join((f or "").strip() for f in fragments)
+    fragments = [line.strip() for selector in selector_list for line in selector.root.text_content().split()]
+    return "\n".join(f or "" for f in fragments)
