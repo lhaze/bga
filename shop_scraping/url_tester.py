@@ -46,7 +46,9 @@ def bga_url_tester(url: Url, model_path: str, debug: bool, interactive: bool, do
     model_class: t.Type[PageFragment] = import_dotted_path(model_path)
     loop = asyncio.get_event_loop()
     response = loop.run_until_complete(async_main(url))
-    model: PageFragment = model_class(response.text, metadata=PageMetadata(url=url, domain=domain))
+    model: PageFragment = model_class(
+        response.text, metadata=PageMetadata(url=url, domain=domain, source_html=response.text)
+    )
     serialized: str = pprint.pformat(model.to_dict())
     rprint("[yellow]Result:", serialized)
     interactive_stop(interactive, "after response", locals())

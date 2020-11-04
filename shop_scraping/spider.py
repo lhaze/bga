@@ -67,7 +67,7 @@ class Spider:
         SIGNALS.spider.url_processing_started.send(self, url=url, model_class=model_class)
         response = await self._make_request(url=url)
         if response:
-            model = model_class(response.text, metadata=self._get_page_metadata(url))
+            model = model_class(response.text, metadata=self._get_page_metadata(url, html=response.text))
             if model.is_valid_response():
                 SIGNALS.output.url_response_valid.send(self, url=url, response=response)
                 self._extract(model)
@@ -103,8 +103,8 @@ class Spider:
         SIGNALS.output.url_failed.send(self, url=url, response=response, tries=tries)
         return None
 
-    def _get_page_metadata(self, url: Url) -> PageMetadata:
-        return PageMetadata(url=url, domain=self.config.domain)
+    def _get_page_metadata(self, url: Url, html: str) -> PageMetadata:
+        return PageMetadata(url=url, domain=self.config.domain, source_html=html)
 
     def _extract(self, model: PageModel):
         if catalogue_model := self.config.catalogue_model:

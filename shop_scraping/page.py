@@ -25,6 +25,7 @@ class PageMetadata:
 
     url: Url
     domain: Url
+    source_html: str
 
 
 class Field:
