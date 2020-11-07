@@ -7,6 +7,7 @@ from httpx import Response
 from common.measures import Timer
 
 from .config import ProcessState
+from .spider import Spider
 
 
 def serialize_kwargs(kwargs: t.Dict[str, t.Any]):
@@ -44,6 +45,11 @@ def _serialize_process_state(obj: ProcessState) -> str:
     'process 2019-08-14T12:50:32'
     """
     return f"{obj.name} {obj.start.isoformat()}"
+
+
+@serialize_value.register
+def _serialize_spider(obj: Spider) -> str:
+    return obj.config.name
 
 
 @serialize_value.register(Response)
