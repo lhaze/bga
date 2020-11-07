@@ -11,7 +11,7 @@ def find_strip(strings: t.Sequence[str]) -> str:
 
 
 def clean_split_n_strip(self, selector_list) -> str:
-    lines = (selector_list.get() or "").splitlines()
+    lines = (selector_list.get() or "").split()
     return " ".join(line.strip() for line in lines)
 
 
@@ -26,7 +26,7 @@ def text_to_money(value_str: str) -> t.Optional[t.Dict[str, str]]:
     """
     if not value_str:
         return None
-    amount, currency = value_str.split(" ", 1)
+    amount, currency = value_str.split(maxsplit=1)
     return to_money(amount, currency)
 
 

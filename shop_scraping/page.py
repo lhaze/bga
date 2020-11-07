@@ -107,6 +107,7 @@ class Field:
     def clean(self, method: CleanFunction) -> None:
         """Decorator for marking a field's clean method"""
         self._clean = method
+        return method
 
 
 class XPath(Field):
