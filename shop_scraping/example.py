@@ -1,3 +1,4 @@
+from shop_scraping.config import SpiderConfig
 from shop_scraping.page import (
     Css,
     PageFragment,
@@ -5,6 +6,7 @@ from shop_scraping.page import (
     Re,
     XPath,
 )
+from common.urls import Url
 
 
 class ExamplePage(PageFragment):
@@ -22,9 +24,6 @@ class ExampleMoreNavigation(PageFragment):
     items = Css(".navigation a", many=True, model=ExampleMoreLink)
 
 
-# for modelling spider
-
-
 class StartPage(PageModel):
     title = XPath("//head/title/text()")
     catalogue_pages = Css("div p a::attr(href)", many=True)
@@ -32,3 +31,17 @@ class StartPage(PageModel):
 
 class CataloguePage(PageModel):
     items = Css(".navigation a", many=True, model=ExampleMoreLink)
+
+
+config = SpiderConfig(
+    name="example",
+    domain=Url("https://example.com"),
+    # start_urls=[self.domain] as default
+    # is_active=True as default
+    start_model=StartPage,
+    catalogue_model=CataloguePage,
+    # details_model=None as no model defined
+    # concurrency_policy=ConcurrencyPolicy() as default
+    # schedule_policy=SchedulePolicy() as default
+    # request_policy=RequestPolicy() as default
+)
