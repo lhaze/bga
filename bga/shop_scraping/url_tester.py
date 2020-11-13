@@ -6,11 +6,11 @@ import typing as t
 from pca.utils.imports import import_dotted_path
 from rich import print as rprint
 
-from common.debugging import (
+from bga.common.debugging import (
     interactive_stop,
     post_mortem,
 )
-from common.urls import Url, get_domain
+from bga.common.urls import Url, get_domain
 from .page import PageFragment, PageMetadata
 from .fetching import fetch, Response
 

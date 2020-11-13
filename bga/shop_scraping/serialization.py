@@ -4,7 +4,7 @@ import typing as t
 
 from httpx import Response
 
-from common.measures import Timer
+from bga.common.measures import Timer
 
 from .config import ProcessState
 from .spider import Spider

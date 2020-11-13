@@ -4,8 +4,8 @@ import typing as t
 import httpx
 from pca.data.descriptors import reify
 
-from common.measures import Timer
-from common.urls import Url
+from bga.common.measures import Timer
+from bga.common.urls import Url
 
 from .config import ProcessState, SpiderConfig
 from .fetching import bound_fetch

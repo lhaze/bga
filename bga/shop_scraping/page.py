@@ -5,8 +5,8 @@ from inspect import isawaitable
 from parsel import Selector, SelectorList
 from pca.data.descriptors import reify
 
-from common.exceptions import BgaException
-from common.urls import Url
+from bga.common.exceptions import BgaException
+from bga.common.urls import Url
 
 
 Value = t.Union[str, dict, t.List[dict]]

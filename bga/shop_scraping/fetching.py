@@ -6,7 +6,7 @@ from httpx import (
     Response,
 )
 
-from common.urls import Url
+from bga.common.urls import Url
 from .page import PageFragment
 
 

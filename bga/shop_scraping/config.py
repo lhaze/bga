@@ -12,7 +12,7 @@ import typing as t
 
 from pca.data.descriptors import reify
 
-from common.urls import Url
+from bga.common.urls import Url
 from .page import PageModel
 from .fetching import Response
 

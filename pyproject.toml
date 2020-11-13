@@ -6,19 +6,14 @@ version = "0.1.0"
 license = "Proprietary"
 authors = ["lhaze <lhaze@lhaze.name>"]
 description = ""
-packages = [
-    { include = "common" },
-    { include = "shop_scraping" },
-]
 
 [tool.poetry.scripts]
-bga_url_tester = 'shop_scraping.url_tester:command'
-bga_shop_scraper = 'shop_scraping.scraper:command'
+bga_url_tester = 'bga.shop_scraping.url_tester:command'
+bga_shop_scraper = 'bga.shop_scraping.scraper:command'
 
 [tool.poetry.dependencies]
 python = "^3.8"
 # core
-bgap = { path = "../bgap/" }
 python-clean-architecture = "^0.0.6"
 parsel = "1.6.0"
 click = "7.1.2"

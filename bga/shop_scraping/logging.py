@@ -9,7 +9,7 @@ from aiologger.handlers.files import AsyncFileHandler
 from asyncblink import NamedAsyncSignal
 from rich import print as rprint
 
-from common.files import get_data_filepath
+from bga.common.files import get_data_filepath
 
 from .config import ProcessState
 from .serialization import serialize_kwargs, serialize_value

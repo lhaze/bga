@@ -1,6 +1,6 @@
 from aiotinydb import AIOTinyDB
 
-from common.files import get_data_filepath
+from bga.common.files import get_data_filepath
 from .config import ProcessState
 from .signals import SIGNALS
 from .spider import Spider

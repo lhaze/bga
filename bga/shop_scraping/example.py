@@ -1,12 +1,12 @@
-from shop_scraping.config import SpiderConfig
-from shop_scraping.page import (
+from bga.shop_scraping.config import SpiderConfig
+from bga.shop_scraping.page import (
     Css,
     PageFragment,
     PageModel,
     Re,
     XPath,
 )
-from common.urls import Url
+from bga.common.urls import Url
 
 
 class ExamplePage(PageFragment):

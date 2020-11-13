@@ -5,11 +5,11 @@ import typing as t
 
 import click
 
-from common.debugging import (
+from bga.common.debugging import (
     interactive_stop,
     post_mortem,
 )
-from common.measures import Timer
+from bga.common.measures import Timer
 from .logging import LogManager
 from .spider import (
     get_spiders,
