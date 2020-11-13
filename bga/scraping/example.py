@@ -1,5 +1,5 @@
-from bga.shop_scraping.config import SpiderConfig
-from bga.shop_scraping.page import (
+from bga.scraping.config import SpiderConfig
+from bga.scraping.page import (
     Css,
     PageFragment,
     PageModel,

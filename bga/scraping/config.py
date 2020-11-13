@@ -50,7 +50,7 @@ class ProcessState:
 
     @reify
     def output_filepath(self) -> str:
-        return f"shop_scraping/{self.start_as_filename}.output.json"
+        return f"scraping/{self.start_as_filename}.output.json"
 
 
 @dataclass

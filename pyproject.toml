@@ -8,8 +8,8 @@ authors = ["lhaze <lhaze@lhaze.name>"]
 description = ""
 
 [tool.poetry.scripts]
-bga_url_tester = 'bga.shop_scraping.url_tester:command'
-bga_shop_scraper = 'bga.shop_scraping.scraper:command'
+bga_url_tester = 'bga.scraping.url_tester:command'
+bga_scraper = 'bga.scraping.scraper:command'
 
 [tool.poetry.dependencies]
 python = "^3.8"

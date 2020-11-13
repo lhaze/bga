@@ -49,7 +49,7 @@ class LogManager:
         "ERROR": "bright_red",
         "WARNING": "bright_yellow",
     }
-    LOG_FILE_PATTERN = "shop_scraping/{process_datetime}.{name}.log"
+    LOG_FILE_PATTERN = "scraping/{process_datetime}.{name}.log"
 
     def __init__(self, process_state: ProcessState) -> None:
         self._process_state = process_state
@@ -89,7 +89,7 @@ class LogManager:
         process_datetime = self._process_state.start_as_filename
         for logger_name, config in self.FILE_HANLDERS.items():
             # create logger
-            logger = JsonLogger(f"shop_scraping.{logger_name}", flatten=True)
+            logger = JsonLogger(f"scraping.{logger_name}", flatten=True)
             logfile = AsyncFileHandler(
                 filename=get_data_filepath(
                     self.LOG_FILE_PATTERN.format(process_datetime=process_datetime, name=logger_name)
