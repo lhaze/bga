@@ -11,7 +11,7 @@ def get_data_dirs() -> t.Tuple[Path, ...]:
         bgap = None
     directories = (Path(__file__) / "../../data",)
     if bgap:
-        directories += (Path(__file__) / "../../data",)
+        directories += (Path(bgap.__file__) / "../../data",)
     return tuple(d.resolve() for d in directories if d.exists())
 
 
