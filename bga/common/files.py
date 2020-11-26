@@ -9,9 +9,9 @@ def get_data_dirs() -> t.Tuple[Path, ...]:
         import bgap
     except ImportError:
         bgap = None
-    directories = (Path(__file__) / "../../data",)
+    directories = (Path(__file__).parent / "../../data",)
     if bgap:
-        directories += (Path(bgap.__file__) / "../../data",)
+        directories += (Path(bgap.__file__).parent / "../data",)
     return tuple(d.resolve() for d in directories if d.exists())
 
 
